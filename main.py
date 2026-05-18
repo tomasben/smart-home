@@ -131,7 +131,48 @@ class Lexer:
             self.col += 1
         return ch
     
-    
+    def consumir_literales_complejos(self):
+        # 1. Intentar Email
+        temp_pos = self.pos
+        while temp_pos < len(self.source) and (self.source[temp_pos].isalnum() or self.source[temp_pos] in '_.+-@'):
+            temp_pos += 1
+        candidato_email = self.source[self.pos:temp_pos]
+        
+        if '@' in candidato_email:
+            partes = candidato_email.split('@')
+            if len(partes) == 2 and partes[0] and partes[1]:
+                start_row, start_col = self.row, self.col
+                lexema = ""
+                while self.pos < temp_pos: lexema += self.advance()
+                self.tokens.append(Token(TokenKind.EMAIL, lexema, start_row, start_col))
+                return True
+
+        # 2. Intentar Fecha u Hora
+        temp_pos = self.pos
+        while temp_pos < len(self.source) and (self.source[temp_pos].isdigit() or self.source[temp_pos] in ':/'):
+            temp_pos += 1
+        candidato_num = self.source[self.pos:temp_pos]
+        
+        if candidato_num.count('/') == 2:
+            partes = candidato_num.split('/')
+            if len(partes[0]) == 2 and len(partes[1]) == 2 and len(partes[2]) == 4 and all(p.isdigit() for p in partes):
+                start_row, start_col = self.row, self.col
+                lexema = ""
+                while self.pos < temp_pos: lexema += self.advance()
+                self.tokens.append(Token(TokenKind.FECHA, lexema, start_row, start_col))
+                return True
+                
+        if candidato_num.count(':') == 1:
+            partes = candidato_num.split(':')
+            if len(partes[0]) == 2 and len(partes[1]) == 2 and all(p.isdigit() for p in partes):
+                start_row, start_col = self.row, self.col
+                lexema = ""
+                while self.pos < temp_pos: lexema += self.advance()
+                self.tokens.append(Token(TokenKind.HORA, lexema, start_row, start_col))
+                return True
+                
+        return False
+
     def tokenize(self):
         while self.pos < len(self.source):
             ch = self.peek()
@@ -142,6 +183,9 @@ class Lexer:
             
             if ch == '/' and self.peek(1) == '/':
                 self.consumir_comentario()
+                continue
+            
+            if self.consumir_literales_complejos():
                 continue
             
             if ch.isalpha() or ch == '_':
@@ -257,7 +301,7 @@ class Lexer:
                 self.tokens.append(Token(TokenKind.ACTUATOR, lexema, start_row, start_col))
                 return
         
-        self.add_error(f"Identificador no reconocido: '{lexema}' ")
+        self.add_error(f"Identificador no reconocido: '{lexema}'", start_row, start_col)
 
 
     def consumir_atributo(self):
@@ -271,11 +315,11 @@ class Lexer:
             nombre += self.advance()
         
         if not nombre:
-            self.add_error("Se esperaba un nombre de atributo después del '.'")
+            self.add_error("Se esperaba un nombre de atributo después del '.'", start_row, start_col)
             return
         
-        if nombre.lower() not in ATRIBUTOS_VALIDOS:
-            self.add_error(f"Atributo desconocido: '.{nombre}'")
+        if f".{nombre.lower()}" not in ATRIBUTOS_VALIDOS:
+            self.add_error(f"Atributo desconocido: '.{nombre}'", start_row, start_col)
             return
         
         self.tokens.append(Token(
