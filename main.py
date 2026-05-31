@@ -245,6 +245,10 @@ class Lexer:
 
 
     def consumir_hora(self):
+        saved_pos = self.pos
+        saved_row = self.row
+        saved_col = self.col
+
         start_row = self.row
         start_col = self.col
         num1 = ""
@@ -254,6 +258,9 @@ class Lexer:
             num1 += self.advance()
 
         if not num1 or self.pos >= len(self.source) or self.source[self.pos] != ':':
+            self.pos = saved_pos
+            self.row = saved_row
+            self.col = saved_col
             return False
         self.advance()
 
@@ -261,6 +268,9 @@ class Lexer:
             num2 += self.advance()
 
         if not num2:
+            self.pos = saved_pos
+            self.row = saved_row
+            self.col = saved_col
             return False
 
         if not (0 <= int(num1) <= 23 and 0 <= int(num2) <= 59):
