@@ -1,0 +1,13 @@
+every 232:59 do
+   if reloj_casa.fecha == 01/01/2100 then
+      if altavoz_comedor.email_notif == +-+4@85kd-.aa.bbb OR altavoz.mensaje == "3" then
+         persianacomedor.posicion = 6%
+      end
+   else
+      foco.color = azul
+      aire__.estado = ON
+      if (sensor_humedad > 05.4%) then
+         aire_acondicionado.modo = VENT
+      end
+   end
+end
