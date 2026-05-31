@@ -230,22 +230,22 @@ class Lexer:
             lexema += self.advance()
             self.tokens.append(Token(TokenKind.PERCENT, lexema, start_row, start_col))
 
-        elif sig == "°" or (sig == "C" and lexema):
+        elif sig == "°" or (sig.upper() == "C" and lexema):
             if sig == "°":
                 lexema += self.advance()
-            if self.peek() == "C":
+            if self.peek().upper() == "C":
                 lexema += self.advance()
                 self.tokens.append(Token(TokenKind.TEMP, lexema, start_row, start_col))
             else:
                 self.add_error(f"Unidad de temperatura incompleta: '{lexema}'")
 
-        elif sig in ("l", "s", "m", "h"):
-            if sig == "l" and self.source[self.pos : self.pos + 3] == "lux":
+        elif sig.lower() in ("l", "s", "m", "h"):
+            if sig.lower() == "l" and self.source[self.pos : self.pos + 3].lower() == "lux":
                 lexema += self.advance()
                 lexema += self.advance()
                 lexema += self.advance()
                 self.tokens.append(Token(TokenKind.LUX, lexema, start_row, start_col))
-            elif sig in ("s", "m", "h"):
+            elif sig.lower() in ("s", "m", "h"):
                 lexema += self.advance()
                 self.tokens.append(
                     Token(TokenKind.TIME_DURATION, lexema, start_row, start_col)
