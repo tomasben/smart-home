@@ -130,48 +130,6 @@ class Lexer:
         else:
             self.col += 1
         return ch
-    
-    def consumir_literales_complejos(self):
-        # 1. Intentar Email
-        temp_pos = self.pos
-        while temp_pos < len(self.source) and (self.source[temp_pos].isalnum() or self.source[temp_pos] in '_.+-@'):
-            temp_pos += 1
-        candidato_email = self.source[self.pos:temp_pos]
-        
-        if '@' in candidato_email:
-            partes = candidato_email.split('@')
-            if len(partes) == 2 and partes[0] and partes[1]:
-                start_row, start_col = self.row, self.col
-                lexema = ""
-                while self.pos < temp_pos: lexema += self.advance()
-                self.tokens.append(Token(TokenKind.EMAIL, lexema, start_row, start_col))
-                return True
-
-        # 2. Intentar Fecha u Hora
-        temp_pos = self.pos
-        while temp_pos < len(self.source) and (self.source[temp_pos].isdigit() or self.source[temp_pos] in ':/'):
-            temp_pos += 1
-        candidato_num = self.source[self.pos:temp_pos]
-        
-        if candidato_num.count('/') == 2:
-            partes = candidato_num.split('/')
-            if len(partes[0]) == 2 and len(partes[1]) == 2 and len(partes[2]) == 4 and all(p.isdigit() for p in partes):
-                start_row, start_col = self.row, self.col
-                lexema = ""
-                while self.pos < temp_pos: lexema += self.advance()
-                self.tokens.append(Token(TokenKind.FECHA, lexema, start_row, start_col))
-                return True
-                
-        if candidato_num.count(':') == 1:
-            partes = candidato_num.split(':')
-            if len(partes[0]) == 2 and len(partes[1]) == 2 and all(p.isdigit() for p in partes):
-                start_row, start_col = self.row, self.col
-                lexema = ""
-                while self.pos < temp_pos: lexema += self.advance()
-                self.tokens.append(Token(TokenKind.HORA, lexema, start_row, start_col))
-                return True
-                
-        return False
 
     def tokenize(self):
         while self.pos < len(self.source):
@@ -181,11 +139,29 @@ class Lexer:
                 self.advance()
                 continue
             
+            if ch in '=!<>()':
+                self.consumir_operador()
+                continue
+            
             if ch == '/' and self.peek(1) == '/':
                 self.consumir_comentario()
                 continue
+
+            if self.consumir_email():
+                continue
             
-            if self.consumir_literales_complejos():
+            if self.consumir_hora():
+                continue
+
+            if self.consumir_fecha():
+                continue
+
+            if ch.isdigit():
+                self.consumir_numero()
+                continue
+
+            if ch == '"':
+                self.consumir_string()
                 continue
             
             if ch.isalpha() or ch == '_':
@@ -196,23 +172,104 @@ class Lexer:
                 self.consumir_atributo()
                 continue
             
-            if ch == '"':
-                self.consumir_string()
-                continue
-            
-            if ch in '=!<>()':
-                self.consumir_operador()
-                continue
-
-            if ch.isdigit():
-                self.consumir_numero()
-                continue
-            
             self.add_error(f"Carácter no reconocido: '{ch}'")
             self.advance()
         
         self.tokens.append(Token(TokenKind.EOF, "", self.row, self.col))
         return self.tokens
+
+    def consumir_email(self):
+        temp_pos = self.pos
+        while temp_pos < len(self.source) and (self.source[temp_pos].isalnum() or self.source[temp_pos] in '_.+-@'):
+            temp_pos += 1
+            
+        candidato = self.source[self.pos:temp_pos]
+
+        if candidato.count('@') == 1:
+            usuario, resto = candidato.split('@')
+            if usuario and '.' in resto:
+                dominio, extension = resto.rsplit('.', 1)
+                
+                caracteres_validos = set('_.+-')
+                usuario_valido = all(c.isalnum() or c in caracteres_validos for c in usuario)
+                dominio_valido = all(c.isalnum() or c in caracteres_validos for c in dominio)
+                extension_valida = extension.isalpha() and 2 <= len(extension) <= 4
+                
+                if usuario_valido and dominio_valido and extension_valida and dominio:
+                    start_row, start_col = self.row, self.col
+                    lexema = ""
+                    while self.pos < temp_pos:
+                        lexema += self.advance()
+                    self.tokens.append(Token(TokenKind.EMAIL, lexema, start_row, start_col))
+                    return True
+        return False
+
+    def consumir_fecha(self):
+        if self.pos + 9 >= len(self.source):
+            return False
+
+        d1 = self.source[self.pos]
+        d2 = self.source[self.pos + 1]
+        sep1 = self.source[self.pos + 2]
+        m1 = self.source[self.pos + 3]
+        m2 = self.source[self.pos + 4]
+        sep2 = self.source[self.pos + 5]
+        a1 = self.source[self.pos + 6]
+        a2 = self.source[self.pos + 7]
+        a3 = self.source[self.pos + 8]
+        a4 = self.source[self.pos + 9]
+
+        if not (d1.isdigit() and d2.isdigit() and sep1 == '/' and 
+                m1.isdigit() and m2.isdigit() and sep2 == '/' and 
+                a1.isdigit() and a2.isdigit() and a3.isdigit() and a4.isdigit()):
+            return False
+
+        dia = int(d1 + d2)
+        mes = int(m1 + m2)
+        anio = int(a1 + a2 + a3 + a4)
+
+        if not (1 <= dia <= 31 and 1 <= mes <= 12 and 1900 <= anio <= 2099):
+            self.add_error(f"Fecha fuera de rango: '{d1}{d2}/{m1}{m2}/{a1}{a2}{a3}{a4}'")
+            for _ in range(10):
+                self.advance()
+            return True
+
+        start_row, start_col = self.row, self.col
+        lexema = ""
+
+        for _ in range(10):
+            lexema += self.advance()
+
+        self.tokens.append(Token(TokenKind.FECHA, lexema, start_row, start_col))
+        return True
+
+
+    def consumir_hora(self):
+        start_row = self.row
+        start_col = self.col
+        num1 = ""
+        num2 = ""
+
+        while self.pos < len(self.source) and self.source[self.pos].isdigit():
+            num1 += self.advance()
+
+        if not num1 or self.pos >= len(self.source) or self.source[self.pos] != ':':
+            return False
+        self.advance()
+
+        while self.pos < len(self.source) and self.source[self.pos].isdigit():
+            num2 += self.advance()
+
+        if not num2:
+            return False
+
+        if not (0 <= int(num1) <= 23 and 0 <= int(num2) <= 59):
+            self.add_error(f"Hora inválida: '{num1}:{num2}'", start_row, start_col)
+            return True
+
+        lexema = f"{num1}:{num2}"
+        self.tokens.append(Token(TokenKind.HORA, lexema, start_row, start_col))
+        return True
 
 
     def consumir_numero(self):
@@ -258,13 +315,11 @@ class Lexer:
         else:
             self.tokens.append(Token(TokenKind.NUMBER, lexema, start_row, start_col))
 
-
     def consumir_comentario(self):
         self.advance()  
         self.advance()
         while self.pos < len(self.source) and self.peek() != '\n':
             self.advance()
-
 
     def consumir_identificador(self):
         start_row = self.row
@@ -416,7 +471,16 @@ class Lexer:
 
 
 def main():
+    if len(sys.argv) < 2:
+        print("\033[91mError:\033[0m debes indicar un archivo .smart")
+        print("Uso: python lexer.py <archivo.smart>")
+        sys.exit(1)
+
     file_name = sys.argv[1]
+
+    if not file_name.endswith(".smart"):
+        print(f"\033[91mError:\033[0m el archivo '{file_name}' no tiene extensión .smart")
+        sys.exit(1)
 
     try:
         with open(file_name, "r", encoding="utf-8") as f:
@@ -424,7 +488,7 @@ def main():
     except FileNotFoundError:
         print(f"Error: archivo '{file_name}' no encontrado")
         sys.exit(1)
-    
+
     lexer = Lexer(source)
     tokens = lexer.tokenize()
 
@@ -434,7 +498,7 @@ def main():
             print(f"  {err}\n")
     else:
         print("\n\033[92mAnálisis léxico exitoso.\033[0m")
-    
+
     for tok in tokens:
         print(tok)
 
