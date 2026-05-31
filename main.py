@@ -54,7 +54,7 @@ def editor_consola():
     print("-" * 60 + "\033[0m")
     print()
     print("  \033[90mEscribí tu código libremente.\033[0m")
-    print("  \033[90mPresioná \033[93mCtrl+Enter\033[90m para enviar y analizar.\033[0m")
+    print("  \033[90mPresioná \033[93mCtrl+P\033[90m para enviar y analizar.\033[0m")
     print("  \033[90mPresioná \033[93mEsc\033[90m para volver al menú.\033[0m")
     print()
 
@@ -73,7 +73,7 @@ def editor_consola():
             print()
             return None
 
-        if ch == "\n":
+        if ch == "\x10":
             source = "\n".join(lineas)
             print()
             return source
