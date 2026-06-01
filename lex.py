@@ -24,7 +24,7 @@ class Lexer:
         line_idx = r - 1
         if 0 <= line_idx < len(lines):
             line_text = lines[line_idx]
-            max_ancho = 70
+            max_ancho = 50
             err_msg = f"\033[91mError Léxico\033[0m en línea {r}, col {c}: {msg}\n"
 
             if len(line_text) <= max_ancho:
