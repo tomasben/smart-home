@@ -24,9 +24,35 @@ class Lexer:
         line_idx = r - 1
         if 0 <= line_idx < len(lines):
             line_text = lines[line_idx]
+            max_ancho = 70
             err_msg = f"\033[91mError Léxico\033[0m en línea {r}, col {c}: {msg}\n"
-            err_msg += f"  {line_text}\n"
-            err_msg += "  " + " " * (c - 1) + "\033[91m^\033[0m"
+
+            if len(line_text) <= max_ancho:
+                err_msg += f"  {line_text}\n"
+                err_msg += "  " + " " * (c - 1) + "\033[91m^\033[0m"
+            else:
+                mitad = max_ancho // 2
+                inicio = c - 1 - mitad
+                prefijo = ""
+                sufijo = ""
+
+                if inicio < 0:
+                    inicio = 0
+                else:
+                    prefijo = "..."
+
+                fin = inicio + max_ancho
+                if fin >= len(line_text):
+                    fin = len(line_text)
+                else:
+                    sufijo = "..."
+
+                fragmento = prefijo + line_text[inicio:fin] + sufijo
+                posicion_flecha = (c - 1) - inicio + len(prefijo)
+
+                err_msg += f"  {fragmento}\n"
+                err_msg += "  " + " " * posicion_flecha + "\033[91m^\033[0m"
+
             self.errors.append(err_msg)
         else:
             self.errors.append(f"\033[91mError Léxico:\033[0m {msg}")
