@@ -1,13 +1,41 @@
-every 232:59 do
-   if reloj_casa.fecha == 01/01/2100 then
-      if altavoz_comedor.email_notif == +-+4@85kd-.aa.bbb OR altavoz.mensaje == "3" then
-         persianacomedor.posicion = 6%
-      end
-   else
-      foco.color = azul
-      aire__.estado = ON
-      if (sensor_humedad > 05.4%) then
-         aire_acondicionado.modo = VENT
-      end
-   end
+if ((aire_acondicionado.temp_obj <= 2°C OR reloj_.hora > 89:09 AND (aire_z.modo == CALOR))) AND ((foco____.brillo > 38% AND NOT reloj_.fecha == 50/80/5835 AND NOT foco__.color != blanco) AND NOT sensor_humo != TRUE) then
+    if (sensor_temp >= 7.26°C AND aire__.temp_act <= 885.0°C) OR sensor_humedad__d < 09% then
+    if aire_N_.temp_act == 668°C AND NOT persiana__.posicion <= 72% then
+    if sensor_temp_q >= 933°C then
+    persiana_.posicion = 1.28%
+else
+    if NOT ((alarma_casa.activada == OFF)) OR sensor_humedad_n > 3.6% then
+    foco____.brillo = 514%
+    altavoz__4.volumen = 4.8%
+else
+    if NOT NOT altavoz_.mute != OFF AND NOT (sensor_luz > 5lux) then
+    cerradura_.estado = OFF
+else
+    persiana_comedor.posicion = 1.085%
+end
+end
+    alarma_.activada = ON
+end
+    if NOT (aire_TE.modo != VENT AND reloj_M.fecha != 32/58/4754) AND sensor_humedad <= 2% OR NOT NOT (sensor_humedad <= 0.47%) then
+    if NOT NOT (reloj__.hora == 75:05 OR aire_acondicionado.temp_act >= 67.9°C) AND NOT sensor_luz____ >= 6lux then
+    altavoz_P.volumen = 7975%
+    alarma_casa.estado = OFF
+else
+    cerradura_principal.estado = ON
+end
+    altavoz_comedor.mensaje = "Z"
+else
+    persiana_sala.posicion = 6%
+end
+    cerradura_principal.estado = OFF
+else
+    foco_t.brillo = 3%
+end
+    persiana_.posicion = 44%
+    aire_acondicionado.temp_obj = 4.1°C
+end
+    altavoz__.email_notif = adonai@gmail.com
+end
+every 18:04 do
+    altavoz_Q.mensaje = " "
 end

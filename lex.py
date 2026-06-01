@@ -24,35 +24,17 @@ class Lexer:
         line_idx = r - 1
         if 0 <= line_idx < len(lines):
             line_text = lines[line_idx]
-            max_ancho = 50
+            margen_izq = 30
+            margen_der = 10
+            inicio = max(0, c - 1 - margen_izq)
+            fin = min(len(line_text), c - 1 + margen_der + 1)
+            fragmento = line_text[inicio:fin]
+            prefijo = "..." if inicio > 0 else ""
+            sufijo = "..." if fin < len(line_text) else ""
+            pos_flecha = (c - 1) - inicio + len(prefijo)
             err_msg = f"\033[91mError Léxico\033[0m en línea {r}, col {c}: {msg}\n"
-
-            if len(line_text) <= max_ancho:
-                err_msg += f"  {line_text}\n"
-                err_msg += "  " + " " * (c - 1) + "\033[91m^\033[0m"
-            else:
-                mitad = max_ancho // 2
-                inicio = c - 1 - mitad
-                prefijo = ""
-                sufijo = ""
-
-                if inicio < 0:
-                    inicio = 0
-                else:
-                    prefijo = "..."
-
-                fin = inicio + max_ancho
-                if fin >= len(line_text):
-                    fin = len(line_text)
-                else:
-                    sufijo = "..."
-
-                fragmento = prefijo + line_text[inicio:fin] + sufijo
-                posicion_flecha = (c - 1) - inicio + len(prefijo)
-
-                err_msg += f"  {fragmento}\n"
-                err_msg += "  " + " " * posicion_flecha + "\033[91m^\033[0m"
-
+            err_msg += f"  {prefijo}{fragmento}{sufijo}\n"
+            err_msg += "  " + " " * pos_flecha + "\033[91m^\033[0m"
             self.errors.append(err_msg)
         else:
             self.errors.append(f"\033[91mError Léxico:\033[0m {msg}")
@@ -216,6 +198,8 @@ class Lexer:
 
         if not num1 or self.pos >= len(self.source) or self.source[self.pos] != ":":
             self.pos = start_pos
+            self.row = start_row
+            self.col = start_col
             return False
         self.advance()
 
@@ -224,6 +208,8 @@ class Lexer:
 
         if not num2:
             self.pos = start_pos
+            self.row = start_row
+            self.col = start_col
             return False
 
         if not (0 <= int(num1) <= 23 and 0 <= int(num2) <= 59):
