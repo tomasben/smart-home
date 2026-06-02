@@ -64,7 +64,7 @@ class Token:
     col: int
 
     def __str__(self):
-        return f"{BLUE}{self.kind.name}{RESET}{DIM}[{self.row},{self.row}]{RESET}"
+        return f"{BLUE}{self.kind.name}{RESET}"
 
     def __repr__(self):
         return f"\033[92mToken\033[0m(\033[93m{self.kind.name}\033[0m, \033[96m'{self.src}'\033[0m, línea={self.row}, col={self.col})"

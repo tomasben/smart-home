@@ -40,15 +40,15 @@ def mostrar_menu():
 def mostrar_resultados(lexer, tokens, mode: str):
     if mode == "default":
         if lexer.errors:
-            print("\n\033[91mErrores encontrados:\033[0m")
+            print(f"\n  {RED}Errores encontrados:{RESET}")
             for err in lexer.errors:
                 print(f"  {err}\n")
         else:
-            print("\n\033[92mAnálisis léxico exitoso. Sin errores.\033[0m")
+            print("\n  Análisis léxico exitoso.")
 
         print()
         for tok in tokens:
-            print(tok)
+            print(repr(tok))
     elif mode == "simple":
         print(
             f"<<< {' '.join(str(tok) for tok in tokens)}. {len(lexer.errors)} error(es) encontrados"
@@ -122,7 +122,7 @@ def cargar_archivo():
 
 def pausar():
     try:
-        input("\n\033[90m  Presioná Enter para volver al menú...\033[0m")
+        input(f"\n  {DIM}Presioná Enter para volver al menú...{RESET}")
     except (KeyboardInterrupt, EOFError):
         pass
 
