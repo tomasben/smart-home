@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
+RESET = "\033[0m"
+DIM = "\033[2m"
+BLUE = "\033[94m"
+
 
 class TokenKind(Enum):
     WHEN = auto()
@@ -58,6 +62,9 @@ class Token:
     src: str
     row: int
     col: int
+
+    def __str__(self):
+        return f"{BLUE}{self.kind.name}{RESET}{DIM}[{self.row},{self.row}]{RESET}"
 
     def __repr__(self):
         return f"\033[92mToken\033[0m(\033[93m{self.kind.name}\033[0m, \033[96m'{self.src}'\033[0m, línea={self.row}, col={self.col})"
