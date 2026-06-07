@@ -1,3 +1,9 @@
-__pycache__/
-*.smart
-*.txt
+# Ignorar todo
+*
+
+# Excepto estos archivos
+!.gitignore
+!main.py
+!lex.py
+!tok.py
+!script.smart
