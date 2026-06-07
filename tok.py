@@ -27,30 +27,30 @@ class TokenKind(Enum):
     MODO = auto()
     COLOR = auto()
 
-    SENSOR = auto()  # sensor_temp, sensor_luz, etc.
-    ACTUATOR = auto()  # foco_entrada, aire_acondicionado, etc.
-    ATTRIBUTE = auto()  # .estado, .brillo, etc. (incluye el punto)
+    SENSOR = auto()
+    ACTUATOR = auto()
+    ATTRIBUTE = auto()
 
-    NUMBER = auto()  # 25, 80, 100, etc.
-    TEMP = auto()  # 25°C
-    PERCENT = auto()  # 80%
-    LUX = auto()  # 600lux
-    TIME_DURATION = auto()  # 30m, 10s, 1h
-    HORA = auto()  # 22:00
-    FECHA = auto()  # 21/04/2026
-    STRING = auto()  # "texto"
-    EMAIL = auto()  # alguien@dominio.com
+    NUMBER = auto()
+    TEMP = auto()
+    PERCENT = auto()
+    LUX = auto()
+    TIME_DURATION = auto()
+    HORA = auto()
+    FECHA = auto()
+    STRING = auto()
+    EMAIL = auto()
 
-    EQUAL = auto()  # ==
-    NEGATE = auto()  # !=
-    GREATER = auto()  # >
-    LESSER = auto()  # <
-    GREAT_EQUAL = auto()  # >=
-    LESS_EQUAL = auto()  # <=
-    ASSIGN = auto()  # =
+    EQUAL = auto()
+    NEGATE = auto()
+    GREATER = auto()
+    LESSER = auto()
+    GREAT_EQUAL = auto()
+    LESS_EQUAL = auto()
+    ASSIGN = auto()
 
-    LPAREN = auto()  # (
-    RPAREN = auto()  # )
+    LPAREN = auto()
+    RPAREN = auto()
 
     EOF = auto()
     ERROR = auto()
