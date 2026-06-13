@@ -1,154 +1,130 @@
-import sys
 import os
-import msvcrt
+import sys
+import textwrap
 
 from lex import Lexer
 
+RESET = "\033[0m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+RED = "\033[91m"
+GREEN = "\033[92m"
+BLUE = "\033[94m"
+YELLOW = "\033[93m"
+UI_LENGTH = 40
+
 
 def limpiar_pantalla():
-    os.system("cls")
+    os.system("cls" if os.name == "nt" else "clear")
 
 
 def mostrar_banner():
-    print("\033[96m" + "=" * 60)
-    print("        SMART HOME - Analizador Léxico")
-    print("=" * 60 + "\033[0m")
-    print()
+    title = "Smart-Home | Analizador Léxico"
+    lpadding = (UI_LENGTH - len(title)) // 2
+
+    print(f"{DIM}{'─' * UI_LENGTH}")
+    print(f"{lpadding * ' '}{BLUE}{BOLD}Smart-Home{RESET} {DIM}| Analizador Léxico")
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
 
 
 def mostrar_menu():
     mostrar_banner()
-    print("  \033[93m[1]\033[0m  Escribir código en consola")
-    print("  \033[93m[2]\033[0m  Cargar archivo .smart")
-    print("  \033[93m[0]\033[0m  Salir")
+    print()
+    print(f"  {BLUE}[1]{RESET}  Ingreso manual")
+    print(f"  {BLUE}[2]{RESET}  Cargar archivo")
+    print()
+    print(f"  {BLUE}[0]{RESET}  Salir")
     print()
 
 
-def mostrar_resultados(lexer, tokens):
-    print()
-    print("\033[96m" + "-" * 60)
-    print("  Resultados del Análisis Léxico")
-    print("-" * 60 + "\033[0m")
+def mostrar_resultados(lexer, tokens, mode: str):
+    if mode == "default":
+        if lexer.errors:
+            print(f"\n  {RED}Errores encontrados:{RESET}")
+            for err in lexer.errors:
+                print(f"  {err}\n")
+        else:
+            print("\n  Análisis léxico exitoso.")
 
-    if lexer.errors:
-        print("\n\033[91mErrores encontrados:\033[0m")
-        for err in lexer.errors:
-            print(f"  {err}\n")
-    else:
-        print("\n\033[92mAnálisis léxico exitoso. Sin errores.\033[0m")
-
-    print()
-    for tok in tokens:
-        print(tok)
+        print()
+        for tok in tokens:
+            print(repr(tok))
+    elif mode == "simple":
+        print(
+            f"<<< {' '.join(str(tok) for tok in tokens)}. {len(lexer.errors)} error(es) encontrados"
+        )
 
 
-def analizar(source):
+def analizar(source, mode: str = "default"):
     lexer = Lexer(source)
     tokens = lexer.tokenize()
-    mostrar_resultados(lexer, tokens)
+    mostrar_resultados(lexer, tokens, mode)
 
 
-def editor_consola():
-    print("\033[96m" + "-" * 60)
-    print("  Editor de código Smart Home")
-    print("-" * 60 + "\033[0m")
+def interactivo():
+    title = "Modo Interactivo"
+    lpadding = (UI_LENGTH - len(title)) // 2
+
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
+    print(f"{lpadding * ' '}{BLUE}{title}{RESET}")
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
+
+    for linea in textwrap.wrap(
+        "Escribí una sentencia y presiona ENTER para evaluarla.", width=UI_LENGTH - 1
+    ):
+        print(" " + linea)
+
+    for linea in textwrap.wrap("Línea vacía + ENTER para salir", width=UI_LENGTH - 1):
+        print(" " + linea)
+
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
+
     print()
-    print("  \033[90mEscribí tu código libremente.\033[0m")
-    print("  \033[90mPresioná \033[93mCtrl+L\033[90m para enviar y analizar.\033[0m")
-    print("  \033[90mPresioná \033[93mEsc\033[90m para volver al menú.\033[0m")
-    print()
-
-    lineas = [""]
-    linea_actual = 0
-    col = 0
-
-    num = " 1"
-    sys.stdout.write(f"\033[92m{num} │\033[0m ")
-    sys.stdout.flush()
-
     while True:
-        ch = msvcrt.getwch()
+        sentence = input(">>> ").strip()
 
-        if ch == "\x1b":
-            print()
-            return None
-
-        if ch == "\x0c":
-            source = "\n".join(lineas)
-            print()
-            return source
-
-        if ch == "\r":
-            print()
-            linea_actual += 1
-            lineas.append("")
-            col = 0
-            num = str(linea_actual + 1).rjust(2)
-            sys.stdout.write(f"\033[92m{num} │\033[0m ")
-            sys.stdout.flush()
-            continue
-
-        if ch == "\t":
-            lineas[linea_actual] += "    "
-            col += 4
-            sys.stdout.write("    ")
-            sys.stdout.flush()
-            continue
-
-        if ch == "\x08":
-            if col > 0:
-                lineas[linea_actual] = lineas[linea_actual][:-1]
-                col -= 1
-                sys.stdout.write("\b \b")
-                sys.stdout.flush()
-            continue
-
-        if ch == "\x00" or ch == "\xe0":
-            msvcrt.getwch()
-            continue
-
-        if ord(ch) < 32:
-            continue
-
-        lineas[linea_actual] += ch
-        col += 1
-        sys.stdout.write(ch)
-        sys.stdout.flush()
+        if sentence == "":
+            break
+        else:
+            analizar(sentence, "simple")
 
 
 def cargar_archivo():
-    print("\033[96m" + "-" * 60)
-    print("  Cargar archivo .smart")
-    print("-" * 60 + "\033[0m")
-    print()
+    message = "Cargar archivo .smart"
+    lpadding = (UI_LENGTH - len(message)) // 2
 
-    ruta = input("  \033[93mRuta del archivo:\033[0m ").strip()
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
+    print(f"{lpadding * ' '}{BLUE}Cargar archivo{RESET} {DIM}.smart{RESET}")
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
 
-    if not ruta:
-        print("\n\033[91m  No se ingresó ninguna ruta.\033[0m")
-        return None
+    while True:
+        print()
+        route = input("  Ruta del archivo: ").strip()
 
-    if ruta.startswith('"') and ruta.endswith('"'):
-        ruta = ruta[1:-1]
+        if route.startswith(('"', "'")) and route.endswith(('"', "'")):
+            route = route[1:-1]
 
-    if not ruta.lower().endswith(".smart"):
-        print(f"\n\033[91m  Error: el archivo debe tener extensión .smart\033[0m")
-        return None
-
-    try:
-        with open(ruta, "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        print(f"\n\033[91m  Error: archivo '{ruta}' no encontrado.\033[0m")
-        return None
-    except PermissionError:
-        print(f"\n\033[91m  Error: sin permisos para leer '{ruta}'.\033[0m")
-        return None
+        if not route.lower().endswith(".smart"):
+            print(
+                f"  {RED}Error:{RESET} el archivo debe tener extensión {BOLD}.smart{RESET}"
+            )
+        else:
+            try:
+                with open(route, "r", encoding="utf-8") as file:
+                    return file.read()
+            except FileNotFoundError:
+                print(f"\n  {RED}Error:{RESET} archivo '{route}' no encontrado.")
+                return None
+            except PermissionError:
+                print(f"\n  {RED}Error:{RESET} sin permisos para leer '{route}'.")
+                return None
 
 
 def pausar():
-    print("\n\033[90m  Presioná cualquier tecla para volver al menú...\033[0m")
-    msvcrt.getwch()
+    try:
+        input(f"\n  {DIM}Presioná Enter para volver al menú...{RESET}")
+    except (KeyboardInterrupt, EOFError):
+        pass
 
 
 def main():
@@ -156,14 +132,14 @@ def main():
         file_name = sys.argv[1]
         if not file_name.lower().endswith(".smart"):
             print(
-                f"\033[91mError:\033[0m el archivo '{file_name}' no tiene extensión .smart"
+                f"  {RED}Error:{RESET} el archivo debe tener extensión {BOLD}.smart{RESET}"
             )
             sys.exit(1)
         try:
-            with open(file_name, "r", encoding="utf-8") as f:
-                source = f.read()
+            with open(file_name, "r", encoding="utf-8") as file:
+                source = file.read()
         except FileNotFoundError:
-            print(f"\033[91mError:\033[0m archivo '{file_name}' no encontrado")
+            print(f"\n  {RED}Error:{RESET} archivo '{file_name}' no encontrado.")
             sys.exit(1)
         analizar(source)
         return
@@ -172,17 +148,11 @@ def main():
         limpiar_pantalla()
         mostrar_menu()
 
-        opcion = input("  \033[93mElegí una opción:\033[0m ").strip()
+        opcion = input("  >>> ").strip()
 
         if opcion == "1":
             limpiar_pantalla()
-            source = editor_consola()
-            if source is not None and source.strip():
-                analizar(source)
-                pausar()
-            elif source is not None:
-                print("\n\033[91m  No se ingresó código.\033[0m")
-                pausar()
+            interactivo()
 
         elif opcion == "2":
             limpiar_pantalla()
@@ -195,11 +165,11 @@ def main():
 
         elif opcion == "0":
             limpiar_pantalla()
-            print("\033[96m  ¡Hasta luego!\033[0m\n")
+            sys.exit(0)
             break
 
         else:
-            print("\n\033[91m  Opción no válida.\033[0m")
+            print("\n  Opción no válida.")
             pausar()
 
 
@@ -207,5 +177,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\033[91m  Ejecución interrumpida.\033[0m")
+        print("\n  Ejecución interrumpida por teclado.")
         sys.exit(130)

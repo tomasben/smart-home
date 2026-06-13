@@ -7,7 +7,6 @@ from tok import (
     TokenKind,
 )
 
-
 class Lexer:
     def __init__(self, source: str):
         self.source = source
@@ -193,20 +192,34 @@ class Lexer:
         num1 = ""
         num2 = ""
 
-        while self.pos < len(self.source) and self.source[self.pos].isdigit():
-            num1 += self.advance()
 
-        if not num1 or self.pos >= len(self.source) or self.source[self.pos] != ":":
+        while self.pos < len(self.source) and self.source[self.pos].isdigit():
+            num1 += self.source[self.pos]
+            self.pos += 1
+            self.col += 1
+
+
+        if len(num1) != 2:
             self.pos = start_pos
             self.row = start_row
             self.col = start_col
             return False
-        self.advance()
+
+        if self.pos >= len(self.source) or self.source[self.pos] != ":":
+            self.pos = start_pos
+            self.row = start_row
+            self.col = start_col
+            return False
+        self.pos += 1
+        self.col += 1
+
 
         while self.pos < len(self.source) and self.source[self.pos].isdigit():
-            num2 += self.advance()
+            num2 += self.source[self.pos]
+            self.pos += 1
+            self.col += 1
 
-        if not num2:
+        if len(num2) != 2:
             self.pos = start_pos
             self.row = start_row
             self.col = start_col
@@ -214,9 +227,6 @@ class Lexer:
 
         if not (0 <= int(num1) <= 23 and 0 <= int(num2) <= 59):
             self.add_error(f"Hora inválida: '{num1}:{num2}'", start_row, start_col)
-            while self.pos < len(self.source) and not self.source[self.pos].isspace():
-                self.advance()
-
             return True
 
         lexema = f"{num1}:{num2}"
@@ -242,9 +252,8 @@ class Lexer:
             lexema += self.advance()
             self.tokens.append(Token(TokenKind.PERCENT, lexema, start_row, start_col))
 
-        elif sig == "°" or (sig.upper() == "C" and lexema):
-            if sig == "°":
-                lexema += self.advance()
+        elif sig == "°":
+            lexema += self.advance()
             if self.peek().upper() == "C":
                 lexema += self.advance()
                 self.tokens.append(Token(TokenKind.TEMP, lexema, start_row, start_col))

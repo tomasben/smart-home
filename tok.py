@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
+RESET = "\033[0m"
+DIM = "\033[2m"
+BLUE = "\033[94m"
+
 
 class TokenKind(Enum):
     WHEN = auto()
@@ -23,30 +27,30 @@ class TokenKind(Enum):
     MODO = auto()
     COLOR = auto()
 
-    SENSOR = auto()  # sensor_temp, sensor_luz, etc.
-    ACTUATOR = auto()  # foco_entrada, aire_acondicionado, etc.
-    ATTRIBUTE = auto()  # .estado, .brillo, etc. (incluye el punto)
+    SENSOR = auto()
+    ACTUATOR = auto()
+    ATTRIBUTE = auto()
 
-    NUMBER = auto()  # 25, 80, 100, etc.
-    TEMP = auto()  # 25°C
-    PERCENT = auto()  # 80%
-    LUX = auto()  # 600lux
-    TIME_DURATION = auto()  # 30m, 10s, 1h
-    HORA = auto()  # 22:00
-    FECHA = auto()  # 21/04/2026
-    STRING = auto()  # "texto"
-    EMAIL = auto()  # alguien@dominio.com
+    NUMBER = auto()
+    TEMP = auto()
+    PERCENT = auto()
+    LUX = auto()
+    TIME_DURATION = auto()
+    HORA = auto()
+    FECHA = auto()
+    STRING = auto()
+    EMAIL = auto()
 
-    EQUAL = auto()  # ==
-    NEGATE = auto()  # !=
-    GREATER = auto()  # >
-    LESSER = auto()  # <
-    GREAT_EQUAL = auto()  # >=
-    LESS_EQUAL = auto()  # <=
-    ASSIGN = auto()  # =
+    EQUAL = auto()
+    NEGATE = auto()
+    GREATER = auto()
+    LESSER = auto()
+    GREAT_EQUAL = auto()
+    LESS_EQUAL = auto()
+    ASSIGN = auto()
 
-    LPAREN = auto()  # (
-    RPAREN = auto()  # )
+    LPAREN = auto()
+    RPAREN = auto()
 
     EOF = auto()
     ERROR = auto()
@@ -58,6 +62,9 @@ class Token:
     src: str
     row: int
     col: int
+
+    def __str__(self):
+        return f"{BLUE}{self.kind.name}{RESET}"
 
     def __repr__(self):
         return f"\033[92mToken\033[0m(\033[93m{self.kind.name}\033[0m, \033[96m'{self.src}'\033[0m, línea={self.row}, col={self.col})"
