@@ -63,6 +63,22 @@ class Token:
     row: int
     col: int
 
+    @property
+    def type(self):
+        return self.kind.name
+
+    @property
+    def value(self):
+        return self.src
+
+    @property
+    def lineno(self):
+        return self.row
+
+    @property
+    def lexpos(self):
+        return self.col
+
     def __str__(self):
         return f"{BLUE}{self.kind.name}{RESET}"
 

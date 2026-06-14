@@ -7,3 +7,6 @@
 !lex.py
 !tok.py
 !script.smart
+!parser.py
+!test_parser.py
+

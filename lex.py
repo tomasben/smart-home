@@ -15,6 +15,18 @@ class Lexer:
         self.col = 1
         self.tokens = []
         self.errors = []
+        self._token_index = 0
+
+    def token(self):
+        if not self.tokens:
+            self.tokenize()
+        if self._token_index < len(self.tokens):
+            tok = self.tokens[self._token_index]
+            self._token_index += 1
+            if tok.kind == TokenKind.EOF:
+                return None
+            return tok
+        return None
 
     def add_error(self, msg, row=None, col=None):
         r = row if row is not None else self.row
