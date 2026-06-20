@@ -17,6 +17,11 @@ class Lexer:
         self.errors = []
         self._token_index = 0
 
+    def input(self, data):
+        # PLY llama a este método si pasamos el source a parser.parse()
+        # Como ya cargamos el source en __init__, no necesitamos hacer nada.
+        pass
+
     def token(self):
         if not self.tokens:
             self.tokenize()

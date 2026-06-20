@@ -3,6 +3,12 @@ from tok import TokenKind
 
 tokens = [kind.name for kind in TokenKind if kind not in (TokenKind.EOF, TokenKind.ERROR)]
 
+precedence = (
+    ('left', 'OR'),
+    ('left', 'AND'),
+    ('right', 'NOT'),
+)
+
 def p_programa(p):
     "programa : instrucciones"
     p[0] = f"<html>\n<head><title>Smart Home</title></head>\n<body>\n{p[1]}\n</body>\n</html>"
