@@ -1,16 +1,5 @@
-when NOT (persiana_.posicion == 57%) AND NOT NOT (NOT (NOT sensor_humo__ != FALSE OR aire__d_.estado != ON) AND (sensor_humedad__g == 4% AND NOT cerradura_.estado != OFF OR alarma_6.estado != OFF AND reloj_casa.hora < 22:31 AND NOT foco__D.estado == OFF)) OR (persiana_comedor.posicion >= 4.7%) do
-foco_.estado = ON
-altavoz_.mensaje = ";"
-if NOT alarma_.activada == OFF then
-altavoz_.mute = ON
-else
-altavoz_.mute = ON
-if sensor_luz == 928lux OR (sensor_humo___ == FALSE) AND reloj_.hora != 20:23 then
-altavoz_.mute = OFF
-foco_casa.brillo = ON
-else
-altavoz_.mensaje = ""
-end
-end
-alarma_.activada = OFF
-end
+every 30m do 
+   if Not (aire_acondicionado.temp_obj == 17°C) AND NOT (foco_casa.brillo != 100%) then 
+      foco_casa.brillo = 100%
+   end
+end 

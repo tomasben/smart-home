@@ -15,7 +15,7 @@ def p_programa(p):
 
 def p_instrucciones(p):
     """instrucciones : instruccion
-                     | instrucciones instruccion"""
+                    | instrucciones instruccion"""
     if len(p) == 2:
         p[0] = p[1]
     else:
@@ -23,8 +23,9 @@ def p_instrucciones(p):
 
 def p_instruccion(p):
     """instruccion : asignacion
-                   | bloque_when
-                   | bloque_if"""
+                | bloque_when
+                | bloque_if
+                | bloque_every"""
     p[0] = p[1]
 
 def p_asignacion(p):
@@ -45,6 +46,7 @@ def p_asignacion(p):
         print(f"Error semantico en la linea {p.lineno(1)}: {atributo} requiere un simbolo porcentaje (%) no puede tomar el valor {valor}")
         p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} no acepta {valor}</div>"
         return
+
     #FIN DE LA SEMANTICA por ahora
 
     html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
@@ -58,21 +60,37 @@ def p_asignacion(p):
 
 def p_valor(p):
     """valor : NUMBER
-             | TEMP
-             | PERCENT
-             | LUX
-             | TIME_DURATION
-             | HORA
-             | FECHA
-             | STRING
-             | EMAIL
-             | TRUE
-             | FALSE
-             | ON
-             | OFF
-             | COLOR
-             | MODO"""
+            | TEMP
+            | PERCENT
+            | LUX
+            | TIME_DURATION
+            | HORA
+            | FECHA
+            | STRING
+            | EMAIL
+            | TRUE
+            | FALSE
+            | ON
+            | OFF
+            | COLOR
+            | MODO"""
     p[0] = p[1]
+
+def p_bloque_every(p):
+    """bloque_every : EVERY HORA DO instrucciones END
+                    | EVERY TIME_DURATION DO instrucciones END"""
+    
+    hora = p[2]
+    instrucciones_do = p[4]
+    
+    html = f'<div class="every-block" style="margin-bottom: 20px; padding: 10px; border-left: 4px solid green;">\n'
+    html += f'  <h3 style="color: green;">EVERY</h3>\n'
+    html += f'  {hora}\n'
+    html += f'  <h3 style="color: green;">DO</h3>\n'
+    html += f'  <div style="margin-left: 20px;">\n{instrucciones_do}\n  </div>\n'
+    html += f'</div>'
+    
+    p[0] = html
 
 def p_bloque_when(p):
     "bloque_when : WHEN condicion DO instrucciones END"
@@ -81,9 +99,9 @@ def p_bloque_when(p):
     instrucciones_do = p[4]
 
     html = f'<div class="when-block" style="margin-bottom: 20px; padding: 10px; border-left: 4px solid blue;">\n'
-    html += f'  <h3 style="color: blue;">WHEN (Evento)</h3>\n'
+    html += f'  <h3 style="color: blue;">WHEN</h3>\n'
     html += f'  {condicion}\n'
-    html += f'  <h3 style="color: blue;">DO (Acciones)</h3>\n'
+    html += f'  <h3 style="color: blue;">DO</h3>\n'
     html += f'  <div style="margin-left: 20px;">\n{instrucciones_do}\n  </div>\n'
     html += f'</div>'
     
@@ -92,15 +110,15 @@ def p_bloque_when(p):
 
 def p_bloque_if(p):
     """bloque_if : IF condicion THEN instrucciones END
-                 | IF condicion THEN instrucciones ELSE instrucciones END"""
-     
+                | IF condicion THEN instrucciones ELSE instrucciones END"""
+
     condicion = p[2]  
     instrucciones_then = p[4] 
     if len(p) == 6:
         html = f'<div class="if-block" style="margin-bottom: 20px; padding: 10px; border-left: 4px solid orange;">\n'
-        html += f'  <h3 style="color: orange;">IF (Condición)</h3>\n'
+        html += f'  <h3 style="color: orange;">IF</h3>\n'
         html += f'  {condicion}\n'
-        html += f'  <h3 style="color: orange;">THEN (Hacer esto)</h3>\n'
+        html += f'  <h3 style="color: orange;">THEN</h3>\n'
         html += f'  <div style="margin-left: 20px;">\n{instrucciones_then}\n  </div>\n'
         html += f'</div>'
         p[0] = html
@@ -108,30 +126,65 @@ def p_bloque_if(p):
     elif len(p) == 8:
         instrucciones_else = p[6]
         html = f'<div class="if-block" style="margin-bottom: 20px; padding: 10px; border-left: 4px solid orange;">\n'
-        html += f'  <h3 style="color: orange;">IF (Condición)</h3>\n'
+        html += f'  <h3 style="color: orange;">IF</h3>\n'
         html += f'  {condicion}\n'
-        html += f'  <h3 style="color: orange;">THEN (Hacer esto)</h3>\n'
+        html += f'  <h3 style="color: orange;">THEN</h3>\n'
         html += f'  <div style="margin-left: 20px;">\n{instrucciones_then}\n  </div>\n'
-        html += f'  <h3 style="color: red;">ELSE (Si no se cumple, hacer esto)</h3>\n'
+        html += f'  <h3 style="color: orange;">ELSE</h3>\n'
         html += f'  <div style="margin-left: 20px;">\n{instrucciones_else}\n  </div>\n'
         html += f'</div>'
         p[0] = html
 
+# <condition> → <unit_logic> | <unit_logic> AND <condition> | <unit_logic> OR <condition>
+# <unit_logic> → NOT <unit_logic> | ( <condition> ) | <comparison>
+
 def p_condicion(p):
-    """condicion : SENSOR operador_comp valor"""
+    """condicion : unit_logic
+                | unit_logic AND condicion
+                | unit_logic OR condicion"""
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        html = p[1]
+        html += f' <div style="font-weight: bold; margin: 10px;">{p[2]}</div>\n'
+        html += p[3]
+        p[0] = html
+
+def p_unit_logic(p):
+    """unit_logic : NOT unit_logic
+                | LPAREN condicion RPAREN
+                | comparison"""
+    if len(p) == 2:
+        # comparison
+        p[0] = p[1]
+    elif len(p) == 3:
+        # NOT unit_logic
+        unit = p[2]
+        html = f'<div style="font-weight: bold; margin: 10px;">NOT</div>\n'
+        html += unit
+        p[0] = html
+    elif len(p) == 4:
+        # LPAREN condicion RPAREN
+        cond = p[2]
+        html = f'<div style="border: 1px dashed gray; padding: 10px; margin-bottom: 10px;">\n'
+        html += cond
+        html += f'</div>'
+        p[0] = html
+
+def p_comparison_sensor(p):
+    """comparison : SENSOR operador_comp valor"""
     sensor = p[1]
     operador = p[2]
     valor = p[3]
     
-    # <div> verde para sensores como dice el documento
     html = f'  <div style="border: 1px solid green; padding: 20px; margin-bottom: 10px;">\n'
     html += f'    <h2>{sensor}</h2>\n'
     html += f'    <p>Condición: {operador} {valor}</p>\n'
     html += f'  </div>'
     p[0] = html
 
-def p_condicion_actuador(p):
-    """condicion : ACTUATOR ATTRIBUTE operador_comp valor"""
+def p_comparison_actuador(p):
+    """comparison : ACTUATOR ATTRIBUTE operador_comp valor"""
     actuador = p[1]
     atributo = p[2]
     operador = p[3]
@@ -143,26 +196,18 @@ def p_condicion_actuador(p):
     html += f'  </div>'
     p[0] = html
 
-def p_condicion_logica(p):
-    """condicion : condicion AND condicion
-                 | condicion OR condicion"""
-    html = p[1]
-    html += f'  <div style="text-align: center; font-weight: bold; margin: 10px;">{p[2]}</div>\n'
-    html += p[3]
-    p[0] = html
-
-def p_condicion_bool(p):
-    """condicion : TRUE
-                 | FALSE"""
+def p_comparison_bool(p):
+    """comparison : TRUE
+                | FALSE"""
     p[0] = f'<p>Condición: {p[1]}</p>'
 
 def p_operador_comp(p):
     """operador_comp : EQUAL
-                     | NEGATE
-                     | GREATER
-                     | LESSER
-                     | GREAT_EQUAL
-                     | LESS_EQUAL"""
+                    | NEGATE
+                    | GREATER
+                    | LESSER
+                    | GREAT_EQUAL
+                    | LESS_EQUAL"""
     p[0] = p[1]
 
 def p_error(p):
