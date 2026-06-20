@@ -3,6 +3,7 @@ import sys
 import textwrap
 
 from lex import Lexer
+from parser import parser
 
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -55,10 +56,27 @@ def mostrar_resultados(lexer, tokens, mode: str):
         )
 
 
-def analizar(source, mode: str = "default"):
+def analizar(source, mode: str = "default", route: str = None):
     lexer = Lexer(source)
     tokens = lexer.tokenize()
     mostrar_resultados(lexer, tokens, mode)
+
+    if not lexer.errors and mode == "default":
+        print(f"\n  {BLUE}Iniciando Análisis Sintáctico...{RESET}")
+        html_output = parser.parse(source, lexer=lexer)
+        
+        if html_output:
+            print(f"  {GREEN}Análisis sintáctico exitoso.{RESET}")
+            if route:
+                html_route = route.rsplit(".", 1)[0] + ".html"
+                try:
+                    with open(html_route, "w", encoding="utf-8") as f:
+                        f.write(html_output)
+                    print(f"  {GREEN}[+] Archivo HTML generado en: {BOLD}{html_route}{RESET}")
+                except Exception as e:
+                    print(f"  {RED}Error al guardar HTML: {e}{RESET}")
+        else:
+            print(f"  {RED}El análisis sintáctico falló.{RESET}")
 
 
 def interactivo():
@@ -111,7 +129,7 @@ def cargar_archivo():
         else:
             try:
                 with open(route, "r", encoding="utf-8") as file:
-                    return file.read()
+                    return file.read(), route
             except FileNotFoundError:
                 print(f"\n  {RED}Error:{RESET} archivo '{route}' no encontrado.")
                 return None
@@ -141,7 +159,7 @@ def main():
         except FileNotFoundError:
             print(f"\n  {RED}Error:{RESET} archivo '{file_name}' no encontrado.")
             sys.exit(1)
-        analizar(source)
+        analizar(source, route=file_name)
         return
 
     while True:
@@ -156,9 +174,10 @@ def main():
 
         elif opcion == "2":
             limpiar_pantalla()
-            source = cargar_archivo()
-            if source is not None:
-                analizar(source)
+            result = cargar_archivo()
+            if result is not None:
+                source, route = result
+                analizar(source, route=route)
                 pausar()
             else:
                 pausar()

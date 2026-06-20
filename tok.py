@@ -56,7 +56,7 @@ class TokenKind(Enum):
     ERROR = auto()
 
 
-@dataclass(frozen=True)
+@dataclass
 class Token:
     kind: TokenKind
     src: str

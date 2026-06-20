@@ -1,12 +1,12 @@
-# Ignorar todo
+# Ignorar absolutamente todo por defecto
 *
 
-# Excepto estos archivos
-!.gitignore
-!main.py
-!lex.py
-!tok.py
-!script.smart
-!parser.py
-!test_parser.py
+# Permitir navegar por los directorios (necesario para que Git entre a buscar los archivos)
+!*/
 
+# Excepciones: los únicos archivos que se subirán al repositorio
+!tok.py
+!lex.py
+!parser.py
+!main.py
+!.gitignore
