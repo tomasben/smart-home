@@ -23,7 +23,8 @@ def p_instrucciones(p):
 
 def p_instruccion(p):
     """instruccion : asignacion
-                   | bloque_when"""
+                   | bloque_when
+                   | bloque_if"""
     p[0] = p[1]
 
 def p_asignacion(p):
@@ -62,14 +63,46 @@ def p_valor(p):
 
 def p_bloque_when(p):
     "bloque_when : WHEN condicion DO instrucciones END"
-    # El bloque WHEN agrupa la condición y las acciones anidadas
+    
+    condicion = p[2]
+    instrucciones_do = p[4]
+
     html = f'<div class="when-block" style="margin-bottom: 20px; padding: 10px; border-left: 4px solid blue;">\n'
     html += f'  <h3 style="color: blue;">WHEN (Evento)</h3>\n'
-    html += f'  {p[2]}\n'
+    html += f'  {condicion}\n'
     html += f'  <h3 style="color: blue;">DO (Acciones)</h3>\n'
-    html += f'  <div style="margin-left: 20px;">\n{p[4]}\n  </div>\n'
+    html += f'  <div style="margin-left: 20px;">\n{instrucciones_do}\n  </div>\n'
     html += f'</div>'
+    
     p[0] = html
+
+
+def p_bloque_if(p):
+    """bloque_if : IF condicion THEN instrucciones END
+                 | IF condicion THEN instrucciones ELSE instrucciones END"""
+     
+    condicion = p[2]  
+    instrucciones_then = p[4] 
+    if len(p) == 6:
+        html = f'<div class="if-block" style="margin-bottom: 20px; padding: 10px; border-left: 4px solid orange;">\n'
+        html += f'  <h3 style="color: orange;">IF (Condición)</h3>\n'
+        html += f'  {condicion}\n'
+        html += f'  <h3 style="color: orange;">THEN (Hacer esto)</h3>\n'
+        html += f'  <div style="margin-left: 20px;">\n{instrucciones_then}\n  </div>\n'
+        html += f'</div>'
+        p[0] = html
+
+    elif len(p) == 8:
+        instrucciones_else = p[6]
+        html = f'<div class="if-block" style="margin-bottom: 20px; padding: 10px; border-left: 4px solid orange;">\n'
+        html += f'  <h3 style="color: orange;">IF (Condición)</h3>\n'
+        html += f'  {condicion}\n'
+        html += f'  <h3 style="color: orange;">THEN (Hacer esto)</h3>\n'
+        html += f'  <div style="margin-left: 20px;">\n{instrucciones_then}\n  </div>\n'
+        html += f'  <h3 style="color: red;">ELSE (Si no se cumple, hacer esto)</h3>\n'
+        html += f'  <div style="margin-left: 20px;">\n{instrucciones_else}\n  </div>\n'
+        html += f'</div>'
+        p[0] = html
 
 def p_condicion(p):
     """condicion : SENSOR operador_comp valor"""
