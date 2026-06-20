@@ -34,6 +34,19 @@ def p_asignacion(p):
     atributo = p[2]
     valor = p[4]
     
+    #SEMANTICA
+    if atributo == ".estado" and valor not in ("ON", "OFF"):
+        print(f"Error semantico en la linea {p.lineno(1)}: {atributo} solo acepta valores ON u OFF no puede tomar el valor {valor}")
+        #acá hay que decidir qué hacer, capaz le preguntamos a vigil si cortamos todo el análisis o seguimos igual pero avisando qué hubo un error, de momento devuelve un error en el html en rojo y sigue todo, así no se rompe y podemos testear
+        p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} no acepta {valor}</div>"
+        return
+
+    elif atributo == ".brillo" and not valor.endswith("%"):
+        print(f"Error semantico en la linea {p.lineno(1)}: {atributo} requiere un simbolo porcentaje (%) no puede tomar el valor {valor}")
+        p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} no acepta {valor}</div>"
+        return
+    #FIN DE LA SEMANTICA por ahora
+
     html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
     html += f'    <h1>{actuador}</h1>\n'
     html += f'    <ul>\n'
