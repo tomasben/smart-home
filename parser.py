@@ -233,6 +233,9 @@ def p_comparison_sensor(p):
         tipo_esperado = regla_sensor["valores"] 
 
         if isinstance(tipo_esperado, list):
+            if operador not in ["==", "!="]:
+                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: No puedes usar el operador '{operador}' en {sensor} porque es de texto/estado. Usa == o !=</div>"
+                return
             if valor not in tipo_esperado:
                 p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} debe ser uno de {tipo_esperado}</div>"
                 return
