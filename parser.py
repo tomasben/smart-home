@@ -1,5 +1,8 @@
 import ply.yacc as yacc
 from tok import TokenKind
+#DICCIONARIO CON TODA LA SEMANTICA
+from semantica import REGLAS_ACTUADORES
+from semantica import REGLAS_SENSORES
 
 tokens = [kind.name for kind in TokenKind if kind not in (TokenKind.EOF, TokenKind.ERROR)]
 
@@ -36,18 +39,55 @@ def p_asignacion(p):
     valor = p[4]
     
     #SEMANTICA
-    if atributo == ".estado" and valor not in ("ON", "OFF"):
-        print(f"Error semantico en la linea {p.lineno(1)}: {atributo} solo acepta valores ON u OFF no puede tomar el valor {valor}")
-        #acá hay que decidir qué hacer, capaz le preguntamos a vigil si cortamos todo el análisis o seguimos igual pero avisando qué hubo un error, de momento devuelve un error en el html en rojo y sigue todo, así no se rompe y podemos testear
-        p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} no acepta {valor}</div>"
-        return
+    prefijo = actuador.split("_")[0] + "_"
 
-    elif atributo == ".brillo" and not valor.endswith("%"):
-        print(f"Error semantico en la linea {p.lineno(1)}: {atributo} requiere un simbolo porcentaje (%) no puede tomar el valor {valor}")
-        p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} no acepta {valor}</div>"
-        return
+    if prefijo in REGLAS_ACTUADORES:
+        reglas = REGLAS_ACTUADORES[prefijo]
+        
+        # 1. Validar que el atributo exista en este actuador
+        if atributo not in reglas:
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: El {prefijo} no soporta el atributo {atributo}</div>"
+            return
 
-    #FIN DE LA SEMANTICA por ahora
+        regla_atributo = reglas[atributo]
+        
+        # 2. Validar que NO sea de solo lectura (Write permissions)
+        if regla_atributo["permiso"] == "R":
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: El atributo {atributo} de {prefijo} es de SOLO LECTURA y no puede modificarse.</div>"
+            return
+
+        # 3. Validar el tipo de dato
+        tipo_esperado = regla_atributo["valores"] 
+
+        if isinstance(tipo_esperado, list):
+            if valor not in tipo_esperado:
+                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} debe ser uno de {tipo_esperado}</div>"
+                return
+
+        elif tipo_esperado == "porcentaje": 
+            if not str(valor).endswith("%"):
+                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} requiere un porcentaje (%)</div>"
+                return
+            #rangos de valores
+            if "rango" in regla_atributo: 
+                min_val,max_val = regla_atributo["rango"]
+                num=float(str(valor).replace("%",""))
+                if not (min_val <= num <= max_val):
+                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {atributo} debe estar entre {min_val}% y {max_val}%</div>"
+                    return
+                    
+        elif tipo_esperado == "temperatura": 
+            if not str(valor).endswith("°C"):
+                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} requiere una temperatura en grados Celsius (°C)</div>"
+                return
+            #rangos de valores
+            if "rango" in regla_atributo: 
+                min_val,max_val = regla_atributo["rango"]
+                num = float(str(valor).replace("°C", ""))
+                if not (min_val <= num <= max_val):
+                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {atributo} debe estar entre {min_val}°C y {max_val}°C</div>"
+                    return
+    #fin semantica
 
     html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
     html += f'    <h1>{actuador}</h1>\n'
@@ -176,6 +216,43 @@ def p_comparison_sensor(p):
     sensor = p[1]
     operador = p[2]
     valor = p[3]
+
+    #SEMANTICA
+    if sensor in REGLAS_SENSORES:
+        regla_sensor = REGLAS_SENSORES[sensor]
+
+        # 2. Validar el tipo de dato
+        tipo_esperado = regla_sensor["tipo"] 
+
+        if isinstance(tipo_esperado, list):
+            if valor not in tipo_esperado:
+                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} debe ser uno de {tipo_esperado}</div>"
+                return
+
+        elif tipo_esperado == "porcentaje": 
+            if not str(valor).endswith("%"):
+                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} requiere un porcentaje (%)</div>"
+                return
+            #rangos de valores
+            if "rango" in regla_sensor: 
+                min_val,max_val = regla_sensor["rango"]
+                num=float(str(valor).replace("%",""))
+                if not (min_val <= num <= max_val):
+                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {sensor} debe estar entre {min_val}% y {max_val}%</div>"
+                    return
+                    
+        elif tipo_esperado == "temperatura": 
+            if not str(valor).endswith("°C"):
+                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} requiere una temperatura en grados Celsius (°C)</div>"
+                return
+            #rangos de valores
+            if "rango" in regla_sensor: 
+                min_val,max_val = regla_sensor["rango"]
+                num = float(str(valor).replace("°C", ""))
+                if not (min_val <= num <= max_val):
+                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {sensor} debe estar entre {min_val}°C y {max_val}°C</div>"
+                    return
+    #fin semantica
     
     html = f'  <div style="border: 1px solid green; padding: 20px; margin-bottom: 10px;">\n'
     html += f'    <h2>{sensor}</h2>\n'

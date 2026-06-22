@@ -1,5 +1,17 @@
-every 30m do 
-   if Not (aire_acondicionado.temp_obj == 17°C) AND NOT (foco_casa.brillo != 100%) then 
-      foco_casa.brillo = 100%
-   end
-end 
+every 12:00 do
+    aire_habitacion.volumen = 50%
+    reloj_cocina.hora = 14:00
+    aire_habitacion.temp_act = 25°C
+    persiana_cuarto.posicion = 150%
+    foco_sala.brillo = ON
+end
+
+when sensor_temp > 100°C do
+    foco_sala.estado = aZUl
+    altavoz_salon.mute = 50%
+    aire_habitacion.temp_obj = 5°C
+end
+
+when sensor_movimiento == 50% do
+    alarma_casa.activada = "hola"
+end

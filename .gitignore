@@ -9,4 +9,5 @@
 !lex.py
 !parser.py
 !main.py
+!semantica.py
 !.gitignore
