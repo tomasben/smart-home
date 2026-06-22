@@ -92,7 +92,15 @@ def p_asignacion(p):
     html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
     html += f'    <h1>{actuador}</h1>\n'
     html += f'    <ul>\n'
-    html += f'      <li>{atributo} = {valor}</li>\n'
+    
+    if atributo == ".email_notif":
+        # Limpiar comillas que pueda traer el token
+        clean_email = str(valor).strip("\"'")
+        usuario = clean_email.split("@")[0] if "@" in clean_email else "usuario"
+        html += f'      <li>{atributo} = <a href="mailto:{clean_email}">Contactar a {usuario}</a></li>\n'
+    else:
+        html += f'      <li>{atributo} = {valor}</li>\n'
+        
     html += f'    </ul>\n'
     html += f'  </div>'
     
@@ -222,7 +230,7 @@ def p_comparison_sensor(p):
         regla_sensor = REGLAS_SENSORES[sensor]
 
         # 2. Validar el tipo de dato
-        tipo_esperado = regla_sensor["tipo"] 
+        tipo_esperado = regla_sensor["valores"] 
 
         if isinstance(tipo_esperado, list):
             if valor not in tipo_esperado:
@@ -236,11 +244,22 @@ def p_comparison_sensor(p):
             #rangos de valores
             if "rango" in regla_sensor: 
                 min_val,max_val = regla_sensor["rango"]
-                num=float(str(valor).replace("%",""))
+                num = float(str(valor).replace("%", ""))
                 if not (min_val <= num <= max_val):
                     p[0] = f"<div style='color:red;'>Error Semántico: El valor de {sensor} debe estar entre {min_val}% y {max_val}%</div>"
                     return
                     
+        elif tipo_esperado == "lux":
+            if not str(valor).endswith("lux"):
+                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} requiere iluminancia en lux</div>"
+                return
+            if "rango" in regla_sensor:
+                min_val,max_val = regla_sensor["rango"]
+                num = float(str(valor).replace("lux", ""))
+                if not (min_val <= num <= max_val):
+                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {sensor} debe estar entre {min_val}lux y {max_val}lux</div>"
+                    return
+
         elif tipo_esperado == "temperatura": 
             if not str(valor).endswith("°C"):
                 p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} requiere una temperatura en grados Celsius (°C)</div>"

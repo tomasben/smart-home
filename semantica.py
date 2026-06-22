@@ -33,9 +33,9 @@ REGLAS_ACTUADORES = {
 }
 
 REGLAS_SENSORES = {
-    "sensor_temp": {"tipo": "temperatura", "rango": (-10, 50)},
-    "sensor_humedad": {"tipo": "porcentaje", "rango": (0, 100)},
-    "sensor_luz": {"tipo": "lux", "rango": (0, 1000)},
-    "sensor_movimiento": {"tipo": "booleano", "valores": ["TRUE", "FALSE"]},
-    "sensor_humo": {"tipo": "booleano", "valores": ["TRUE", "FALSE"]}
+    "sensor_temp": {"valores": "temperatura", "rango": (-10, 50)},
+    "sensor_humedad": {"valores": "porcentaje", "rango": (0, 100)},
+    "sensor_luz": {"valores": "lux", "rango": (0, 1000)},
+    "sensor_movimiento": {"valores": ["TRUE", "FALSE"]},
+    "sensor_humo": {"valores": ["TRUE", "FALSE"]}
 }

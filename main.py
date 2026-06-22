@@ -80,7 +80,7 @@ def analizar(source, mode: str = "default", route: str = None):
 
 
 def interactivo():
-    title = "Modo Interactivo"
+    title = "Modo Interactivo (En Vivo)"
     lpadding = (UI_LENGTH - len(title)) // 2
 
     print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
@@ -88,23 +88,80 @@ def interactivo():
     print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
 
     for linea in textwrap.wrap(
-        "Escribí una sentencia y presiona ENTER para evaluarla.", width=UI_LENGTH - 1
+        "Generación HTML en tiempo real. Abre 'interactivo.html' en tu navegador.", width=UI_LENGTH - 1
+    ):
+        print(" " + linea)
+    for linea in textwrap.wrap(
+        "Escribe 'cancelar' para descartar la línea actual, o 'salir' para terminar.", width=UI_LENGTH - 1
     ):
         print(" " + linea)
 
-    for linea in textwrap.wrap("Línea vacía + ENTER para salir", width=UI_LENGTH - 1):
-        print(" " + linea)
-
     print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
-
     print()
-    while True:
-        sentence = input(">>> ").strip()
 
-        if sentence == "":
+    codigo_acumulado = ""
+    buffer_temporal = ""
+    prompt = ">>> "
+
+    while True:
+        sentence = input(prompt)
+
+        if sentence.strip().lower() == "salir":
             break
+        
+        if sentence.strip().lower() == "cancelar":
+            buffer_temporal = ""
+            prompt = ">>> "
+            print(f"  {YELLOW}Bloque actual descartado.{RESET}")
+            continue
+
+        if sentence.strip() == "" and not buffer_temporal:
+            continue
+
+        buffer_temporal += sentence + "\n"
+        test_source = codigo_acumulado + "\n" + buffer_temporal
+
+        # Chequeo Léxico
+        lexer = Lexer(test_source)
+        lexer.tokenize()
+        if lexer.errors:
+            print(f"  {RED}Error léxico. Escribe 'cancelar' para descartar.{RESET}")
+            prompt = "... "
+            continue
+
+        # Evitamos que p_error ensucie la consola usando stdout temporal
+        import io
+        import sys
+        
+        old_stdout = sys.stdout
+        sys.stdout = captura = io.StringIO()
+        
+        try:
+            html_output = parser.parse(test_source, lexer=lexer)
+        except Exception:
+            html_output = None
+        finally:
+            sys.stdout = old_stdout
+
+        salida_error = captura.getvalue()
+
+        if html_output:
+            # Se parseó con éxito (instrucción o bloque completado)
+            codigo_acumulado = test_source
+            buffer_temporal = ""
+            prompt = ">>> "
+            
+            with open("interactivo.html", "w", encoding="utf-8") as f:
+                f.write(html_output)
+            print(f"  {GREEN}[+] HTML generado/actualizado en 'interactivo.html'{RESET}")
+            
+        elif "Fin de archivo inesperado" in salida_error:
+            # PLY necesita más líneas (ej: falta el 'end' de un bloque)
+            prompt = "... "
         else:
-            analizar(sentence, "simple")
+            # Error de sintaxis o semántico real
+            print(salida_error, end="")
+            prompt = "... "
 
 
 def cargar_archivo():

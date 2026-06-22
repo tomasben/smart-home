@@ -15,3 +15,7 @@ end
 when sensor_movimiento == 50% do
     alarma_casa.activada = "hola"
 end
+
+when sensor_movimiento == TRUE do
+    altavoz_sala.email_notif = "adonaip2710@gmail.com"
+end
