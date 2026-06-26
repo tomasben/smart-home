@@ -1,3 +1,104 @@
+"""
+∑ → <program>
+<program> → <instruction> | <instruction> <new_line> <program>
+
+<instruction> → <control_when> | <control_every> | <conditional> | <assignment>
+
+<control_when> → when <condition> do <new_line> <action> <new_line> end
+<control_every> → every <tk_val_time> do <new_line> <action> <new_line> end
+<conditional> → if <condition> then <new_line> <action> <new_line> else <new_line><action> <new_line> end
+                | if <condition> then <new_line> <action> <new_line> end
+
+<condition> → <unit_logic> | <unit_logic> AND <condition> | <unit_logic> OR <condition>
+<unit_logic> → NOT <unit_logic> | ( <condition> ) | <comparison>
+
+<temp_sens> → sensor_temp_ <tk_suffix> | sensor_temp
+<luz_sens> → sensor_luz_ <tk_suffix> | sensor_luz
+
+<mov_sens> → sensor_movimiento_ <tk_suffix> | sensor_movimiento
+<humo_sens> → sensor_humo_ <tk_suffix> | sensor_humo
+<humedad_sens> → sensor_humedad_ <tk_suffix> | sensor_humedad
+
+<comparison> → <comparison_sens_temp>
+                    | <comparison_sens_humedad>
+                    | <comparison_sens_luz>
+                    | <comparison_sens_mov>
+                    | <comparison_sens_humo>
+                    | <comparison_foco>
+                    | <comparison_aire>
+                    | <comparison_persiana>
+                    | <comparison_cerradura>
+                    | <comparison_reloj>
+                    | <comparison_altavoz>
+                    | <comparison_alarma>
+
+<comparison_sens_temp> → <temp_sens> <tk_rel_op> <tk_val_num> °C
+<comparison_sens_humedad> → <humedad_sens> <tk_rel_op> <tk_val_num> %
+<comparison_sens_luz> → <luz_sens> <tk_rel_op> <tk_val_num> lux
+<comparison_sens_mov> → <mov_sens> == <tk_val_bool_sens>
+                    | <mov_sens> != <tk_val_bool_sens>
+<comparison_sens_humo> → <humo_sens> == <tk_val_bool_sens>
+                    | <humo_sens> != <tk_val_bool_sens>
+
+<comparison_foco> → <actuator_foco> .estado == <tk_val_bool>
+                    | <actuator_foco> .estado != <tk_val_bool>
+                    | <actuator_foco> .brillo <tk_rel_op> <tk_val_num> %
+                    | <actuator_foco> .color == <tk_val_color>
+                    | <actuator_foco> .color != <tk_val_color>
+<comparison_aire> → <actuator_aire> .estado == <tk_val_bool>
+                    | <actuator_aire> .estado != <tk_val_bool>
+                    | <actuator_aire> .modo == <tk_val_mode>
+                    | <actuator_aire> .modo != <tk_val_mode>
+                    | <actuator_aire> .temp_obj <tk_rel_op> <tk_val_num> °C
+                    | <actuator_aire> .temp_act <tk_rel_op> <tk_val_num> °C
+<comparison_persiana> → <actuator_persiana> .posicion <tk_rel_op> <tk_val_num> %
+<comparison_cerradura> → <actuator_cerradura> .estado == <tk_val_bool>
+                        | <actuator_cerradura> .estado != <tk_val_bool>
+<comparison_reloj> → <actuator_reloj> .hora <tk_rel_op> <tk_val_time>
+                        | <actuator_reloj> .fecha <tk_rel_op> <tk_val_date>
+<comparison_altavoz> → <actuator_altavoz> .volumen <tk_rel_op> <tk_val_num> %
+                        | <actuator_altavoz>.mute == <tk_val_bool>
+                        | <actuator_altavoz>.mute != <tk_val_bool>
+                        | <actuator_altavoz>.mensaje == <tk_val_string>
+                        | <actuator_altavoz>.mensaje != <tk_val_string>
+                        | <actuator_altavoz>.email_notif == <tk_val_email>
+                        | <actuator_altavoz> .email_notif != <tk_val_email>
+<comparison_alarma> → <actuator_alarma> .estado == <tk_val_bool>
+                        | <actuator_alarma> .estado != <tk_val_bool>
+                        | <actuator_alarma> .activada == <tk_val_bool>
+                        | <actuator_alarma> .activada != <tk_val_bool>
+
+<action> → <unit_action> | <unit_action> <new_line> <action>
+<unit_action> → <assignment> | <conditional>
+<assignment> → <assign_foco>
+                | <assign_aire>
+                | <assign_persiana>
+                | <assign_cerradura>
+                | <assign_altavoz>
+                | <assign_alarma>
+<actuator_reloj> → reloj_ <tk_suffix> | reloj_
+<actuator_foco> → foco_ <tk_suffix> | foco_
+<assign_foco> → <actuator_foco> .estado = <tk_val_bool>
+                | <actuator_foco> .brillo = <tk_val_num> %
+                | <actuator_foco> .color = <tk_val_color>
+<actuator_aire> → aire_ <tk_suffix> | aire_
+<assign_aire> → <actuator_aire> .estado = <tk_val_bool>
+                | <actuator_aire> .modo = <tk_val_mode>
+                | <actuator_aire> .temp_obj = <tk_val_num> °C
+<actuator_persiana> → persiana_ <tk_suffix> | persiana_
+<assign_persiana> → <actuator_persiana> .posicion = <tk_val_num> %
+<actuator_cerradura> → cerradura_ <tk_suffix> | cerradura_
+<assign_cerradura> → <actuator_cerradura> .estado = <tk_val_bool>
+<actuator_altavoz> → altavoz_ <tk_suffix> | altavoz_
+<assign_altavoz> → <actuator_altavoz> .volumen = <tk_val_num> %
+                | <actuator_altavoz> .mute = <tk_val_bool>
+                | <actuator_altavoz> .mensaje = <tk_val_string>
+                | <actuator_altavoz> .email_notif = <tk_val_email>
+<actuator_alarma> → alarma_ <tk_suffix> | alarma_
+<assign_alarma> → <actuator_alarma> .estado = <tk_val_bool>
+                | <actuator_alarma> .activada = <tk_val_bool>
+"""
+
 import ply.yacc as yacc
 from tok import TokenKind
 #DICCIONARIO CON TODA LA SEMANTICA

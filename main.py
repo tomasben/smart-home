@@ -31,8 +31,9 @@ def mostrar_banner():
 def mostrar_menu():
     mostrar_banner()
     print()
-    print(f"  {BLUE}[1]{RESET}  Ingreso manual")
-    print(f"  {BLUE}[2]{RESET}  Cargar archivo")
+    print(f"  {BLUE}[1]{RESET}  Ingreso manual (a HTML)")
+    print(f"  {BLUE}[2]{RESET}  Ingreso manual (Solo Tokens)")
+    print(f"  {BLUE}[3]{RESET}  Cargar archivo")
     print()
     print(f"  {BLUE}[0]{RESET}  Salir")
     print()
@@ -77,6 +78,40 @@ def analizar(source, mode: str = "default", route: str = None):
                     print(f"  {RED}Error al guardar HTML: {e}{RESET}")
         else:
             print(f"  {RED}El análisis sintáctico falló.{RESET}")
+
+
+def interactivo_simple():
+    title = "Modo Interactivo (Tokens)"
+    lpadding = (UI_LENGTH - len(title)) // 2
+
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
+    print(f"{lpadding * ' '}{BLUE}{title}{RESET}")
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
+    for linea in textwrap.wrap(
+        "Prueba de Tokens sin validación sintáctica ni traducción a HTML.", width=UI_LENGTH - 1
+    ):
+        print(" " + linea)
+    for linea in textwrap.wrap(
+        "Escribe 'salir' para terminar.", width=UI_LENGTH - 1
+    ):
+        print(" " + linea)
+    print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
+    print()
+
+    while True:
+        try:
+            sentence = input(">>> ")
+            if sentence.strip().lower() == "salir":
+                break
+            if not sentence.strip():
+                continue
+            
+            lexer = Lexer(sentence)
+            tokens = lexer.tokenize()
+            mostrar_resultados(lexer, tokens, mode="simple")
+            
+        except EOFError:
+            break
 
 
 def interactivo():
@@ -230,6 +265,10 @@ def main():
             interactivo()
 
         elif opcion == "2":
+            limpiar_pantalla()
+            interactivo_simple()
+
+        elif opcion == "3":
             limpiar_pantalla()
             result = cargar_archivo()
             if result is not None:
