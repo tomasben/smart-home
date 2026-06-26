@@ -328,17 +328,17 @@ class Lexer:
             self.tokens.append(Token(TokenKind.MODO, lexema, start_row, start_col))
             return
 
-        for prefijo in PREFIJOS_SENSOR:
+        for prefijo, token_kind in PREFIJOS_SENSOR.items():
             if lexema_lower == prefijo or lexema_lower.startswith(prefijo + "_"):
                 self.tokens.append(
-                    Token(TokenKind.SENSOR, lexema, start_row, start_col)
+                    Token(token_kind, lexema, start_row, start_col)
                 )
                 return
 
-        for prefijo in PREFIJOS_ACTUADOR:
+        for prefijo, token_kind in PREFIJOS_ACTUADOR.items():
             if lexema_lower.startswith(prefijo):
                 self.tokens.append(
-                    Token(TokenKind.ACTUATOR, lexema, start_row, start_col)
+                    Token(token_kind, lexema, start_row, start_col)
                 )
                 return
 
@@ -364,12 +364,14 @@ class Lexer:
             )
             return
 
-        if f".{nombre.lower()}" not in ATRIBUTOS_VALIDOS:
-            self.add_error(f"Atributo desconocido: '.{nombre}'", start_row, start_col)
+        attr_key = f".{nombre.lower()}"
+        if attr_key not in ATRIBUTOS_VALIDOS:
+            self.add_error(f"Atributo desconocido: '{attr_key}'", start_row, start_col)
             return
 
+        token_kind = ATRIBUTOS_VALIDOS[attr_key]
         self.tokens.append(
-            Token(TokenKind.ATTRIBUTE, "." + nombre, start_row, start_col)
+            Token(token_kind, "." + nombre, start_row, start_col)
         )
 
     def consumir_string(self):

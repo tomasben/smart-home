@@ -27,9 +27,37 @@ class TokenKind(Enum):
     MODO = auto()
     COLOR = auto()
 
-    SENSOR = auto()
-    ACTUATOR = auto()
-    ATTRIBUTE = auto()
+    # === ACTUADORES ESPECÍFICOS ===
+    ACT_FOCO = auto()
+    ACT_AIRE = auto()
+    ACT_PERSIANA = auto()
+    ACT_CERRADURA = auto()
+    ACT_RELOJ = auto()
+    ACT_ALTAVOZ = auto()
+    ACT_ALARMA = auto()
+
+    # === SENSORES ESPECÍFICOS ===
+    SENS_TEMP = auto()
+    SENS_HUMEDAD = auto()
+    SENS_LUZ = auto()
+    SENS_MOVIMIENTO = auto()
+    SENS_HUMO = auto()
+
+    # === ATRIBUTOS ESPECÍFICOS ===
+    ATTR_ESTADO = auto()
+    ATTR_BRILLO = auto()
+    ATTR_COLOR = auto()
+    ATTR_MODO = auto()
+    ATTR_TEMP_OBJ = auto()
+    ATTR_TEMP_ACT = auto()
+    ATTR_POSICION = auto()
+    ATTR_HORA = auto()
+    ATTR_FECHA = auto()
+    ATTR_VOLUMEN = auto()
+    ATTR_MUTE = auto()
+    ATTR_MENSAJE = auto()
+    ATTR_EMAIL_NOTIF = auto()
+    ATTR_ACTIVADA = auto()
 
 
     NUMBER = auto()
@@ -104,38 +132,38 @@ PALABRAS_RESERVADAS = {
     "off": TokenKind.OFF,
 }
 
-PREFIJOS_SENSOR = (
-    "sensor_temp",
-    "sensor_luz",
-    "sensor_movimiento",
-    "sensor_humo",
-    "sensor_humedad",
-)
+PREFIJOS_SENSOR = {
+    "sensor_temp": TokenKind.SENS_TEMP,
+    "sensor_luz": TokenKind.SENS_LUZ,
+    "sensor_movimiento": TokenKind.SENS_MOVIMIENTO,
+    "sensor_humo": TokenKind.SENS_HUMO,
+    "sensor_humedad": TokenKind.SENS_HUMEDAD,
+}
 
-PREFIJOS_ACTUADOR = (
-    "foco_",
-    "aire_",
-    "persiana_",
-    "cerradura_",
-    "reloj_",
-    "altavoz_",
-    "alarma_",
-)
+PREFIJOS_ACTUADOR = {
+    "foco_": TokenKind.ACT_FOCO,
+    "aire_": TokenKind.ACT_AIRE,
+    "persiana_": TokenKind.ACT_PERSIANA,
+    "cerradura_": TokenKind.ACT_CERRADURA,
+    "reloj_": TokenKind.ACT_RELOJ,
+    "altavoz_": TokenKind.ACT_ALTAVOZ,
+    "alarma_": TokenKind.ACT_ALARMA,
+}
 
 ATRIBUTOS_VALIDOS = {
-    ".estado",
-    ".brillo",
-    ".color",
-    ".modo",
-    ".temp_obj",
-    ".temp_act",
-    ".posicion",
-    ".hora",
-    ".fecha",
-    ".volumen",
-    ".mute",
-    ".mensaje",
-    ".email_notif",
-    ".activada",
+    ".estado": TokenKind.ATTR_ESTADO,
+    ".brillo": TokenKind.ATTR_BRILLO,
+    ".color": TokenKind.ATTR_COLOR,
+    ".modo": TokenKind.ATTR_MODO,
+    ".temp_obj": TokenKind.ATTR_TEMP_OBJ,
+    ".temp_act": TokenKind.ATTR_TEMP_ACT,
+    ".posicion": TokenKind.ATTR_POSICION,
+    ".hora": TokenKind.ATTR_HORA,
+    ".fecha": TokenKind.ATTR_FECHA,
+    ".volumen": TokenKind.ATTR_VOLUMEN,
+    ".mute": TokenKind.ATTR_MUTE,
+    ".mensaje": TokenKind.ATTR_MENSAJE,
+    ".email_notif": TokenKind.ATTR_EMAIL_NOTIF,
+    ".activada": TokenKind.ATTR_ACTIVADA,
 }
 
