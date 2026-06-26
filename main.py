@@ -77,7 +77,7 @@ def analizar(source, mode: str = "default", route: str = None):
                 except Exception as e:
                     print(f"  {RED}Error al guardar HTML: {e}{RESET}")
         else:
-            print(f"  {RED}El análisis sintáctico falló.{RESET}")
+            print(f"  {RED}El análisis sintáctico fallo.{RESET}")
 
 
 def interactivo_simple():
@@ -88,7 +88,7 @@ def interactivo_simple():
     print(f"{lpadding * ' '}{BLUE}{title}{RESET}")
     print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
     for linea in textwrap.wrap(
-        "Prueba de Tokens sin validación sintáctica ni traducción a HTML.", width=UI_LENGTH - 1
+        "Prueba de Tokens sin validacion sintáctica ni traduccion a HTML.", width=UI_LENGTH - 1
     ):
         print(" " + linea)
     for linea in textwrap.wrap(
@@ -123,7 +123,7 @@ def interactivo():
     print(f"{DIM}{'─' * UI_LENGTH}{RESET}")
 
     for linea in textwrap.wrap(
-        "Generación HTML en tiempo real. Abre 'interactivo.html' en tu navegador.", width=UI_LENGTH - 1
+        "Generacion HTML en tiempo real. Abre 'interactivo.html' en tu navegador.", width=UI_LENGTH - 1
     ):
         print(" " + linea)
     for linea in textwrap.wrap(
@@ -181,7 +181,7 @@ def interactivo():
         salida_error = captura.getvalue()
 
         if html_output:
-            # Se parseó con éxito (instrucción o bloque completado)
+            # Se parseo con éxito (instruccion o bloque completado)
             codigo_acumulado = test_source
             buffer_temporal = ""
             prompt = ">>> "
@@ -216,7 +216,7 @@ def cargar_archivo():
 
         if not route.lower().endswith(".smart"):
             print(
-                f"  {RED}Error:{RESET} el archivo debe tener extensión {BOLD}.smart{RESET}"
+                f"  {RED}Error:{RESET} el archivo debe tener extension {BOLD}.smart{RESET}"
             )
         else:
             try:
@@ -242,7 +242,7 @@ def main():
         file_name = sys.argv[1]
         if not file_name.lower().endswith(".smart"):
             print(
-                f"  {RED}Error:{RESET} el archivo debe tener extensión {BOLD}.smart{RESET}"
+                f"  {RED}Error:{RESET} el archivo debe tener extension {BOLD}.smart{RESET}"
             )
             sys.exit(1)
         try:
@@ -284,7 +284,7 @@ def main():
             break
 
         else:
-            print("\n  Opción no válida.")
+            print("\n  Opcion no válida.")
             pausar()
 
 
@@ -292,5 +292,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n  Ejecución interrumpida por teclado.")
+        print("\n  Ejecucion interrumpida por teclado.")
         sys.exit(130)

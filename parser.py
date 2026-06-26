@@ -132,99 +132,133 @@ def p_instruccion(p):
                 | bloque_every"""
     p[0] = p[1]
 
-def p_asignacion(p):
-    "asignacion : ACTUATOR ATTRIBUTE ASSIGN valor"
-    # Acciones semánticas directas: generamos el HTML en lugar de un AST
+#--------------------ASIGNACIONES--------------------
+#foco
+def p_asignacion_foco(p):
+    """asignacion : ACT_FOCO ATTR_ESTADO ASSIGN ON
+                  | ACT_FOCO ATTR_ESTADO ASSIGN OFF
+                  | ACT_FOCO ATTR_BRILLO ASSIGN PERCENT
+                  | ACT_FOCO ATTR_COLOR ASSIGN COLOR"""
+    
     actuador = p[1]
     atributo = p[2]
     valor = p[4]
     
-    #SEMANTICA
-    prefijo = actuador.split("_")[0] + "_"
-
-    if prefijo in REGLAS_ACTUADORES:
-        reglas = REGLAS_ACTUADORES[prefijo]
-        
-        # 1. Validar que el atributo exista en este actuador
-        if atributo not in reglas:
-            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: El {prefijo} no soporta el atributo {atributo}</div>"
+    # 1. Validación Semántica (Ahora es súper corta, solo validamos el rango numérico)
+    if atributo == ".brillo":
+        num = float(str(valor).replace("%", ""))
+        if not (0 <= num <= 100):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: El brillo de {actuador} debe estar entre 0% y 100%</div>"
             return
-
-        regla_atributo = reglas[atributo]
-        
-        # 2. Validar que NO sea de solo lectura (Write permissions)
-        if regla_atributo["permiso"] == "R":
-            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: El atributo {atributo} de {prefijo} es de SOLO LECTURA y no puede modificarse.</div>"
-            return
-
-        # 3. Validar el tipo de dato
-        tipo_esperado = regla_atributo["valores"] 
-
-        if isinstance(tipo_esperado, list):
-            if valor not in tipo_esperado:
-                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} debe ser uno de {tipo_esperado}</div>"
-                return
-
-        elif tipo_esperado == "porcentaje": 
-            if not str(valor).endswith("%"):
-                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} requiere un porcentaje (%)</div>"
-                return
-            #rangos de valores
-            if "rango" in regla_atributo: 
-                min_val,max_val = regla_atributo["rango"]
-                num=float(str(valor).replace("%",""))
-                if not (min_val <= num <= max_val):
-                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {atributo} debe estar entre {min_val}% y {max_val}%</div>"
-                    return
-                    
-        elif tipo_esperado == "temperatura": 
-            if not str(valor).endswith("°C"):
-                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {atributo} requiere una temperatura en grados Celsius (°C)</div>"
-                return
-            #rangos de valores
-            if "rango" in regla_atributo: 
-                min_val,max_val = regla_atributo["rango"]
-                num = float(str(valor).replace("°C", ""))
-                if not (min_val <= num <= max_val):
-                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {atributo} debe estar entre {min_val}°C y {max_val}°C</div>"
-                    return
-    #fin semantica
-
+            
+    # 2. Generación HTML
     html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
     html += f'    <h1>{actuador}</h1>\n'
-    html += f'    <ul>\n'
-    
-    if atributo == ".email_notif":
-        # Limpiar comillas que pueda traer el token
-        clean_email = str(valor).strip("\"'")
-        usuario = clean_email.split("@")[0] if "@" in clean_email else "usuario"
-        html += f'      <li>{atributo} = <a href="mailto:{clean_email}">Contactar a {usuario}</a></li>\n'
-    else:
-        html += f'      <li>{atributo} = {valor}</li>\n'
-        
-    html += f'    </ul>\n'
+    html += f'    <ul><li>{atributo} = {valor}</li></ul>\n'
     html += f'  </div>'
+    p[0] = html
+#aire
+def p_asignacion_aire(p):
+    """asignacion : ACT_AIRE ATTR_ESTADO ASSIGN ON
+                  | ACT_AIRE ATTR_ESTADO ASSIGN OFF
+                  | ACT_AIRE ATTR_MODO ASSIGN MODO
+                  | ACT_AIRE ATTR_TEMP_OBJ ASSIGN TEMP"""
+                  
+    actuador = p[1]
+    atributo = p[2]
+    valor = p[4]
+
+    if atributo == ".temp_obj":
+        num = float(str(valor).replace("°C", ""))
+        if not (16 <= num <= 30):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: La temperatura objetivo debe estar entre 16°C y 30°C</div>"
+            return
+            
+    html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
+    html += f'    <h1>{actuador}</h1>\n'
+    html += f'    <ul><li>{atributo} = {valor}</li></ul>\n'
+    html += f'  </div>'
+    p[0] = html
+#persiana 
+def p_asignacion_persiana(p):
+    """asignacion : ACT_PERSIANA ATTR_POSICION ASSIGN PERCENT"""
     
+    actuador = p[1]
+    atributo = p[2]
+    valor = p[4]
+    
+    # 1. Validación Semántica (Ahora es súper corta, solo validamos el rango numérico)
+    if atributo == ".posicion":
+        num = float(str(valor).replace("%", ""))
+        if not (0 <= num <= 100):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: La posicion de {actuador} debe estar entre 0% y 100%</div>"
+            return
+            
+    # 2. Generación HTML
+    html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
+    html += f'    <h1>{actuador}</h1>\n'
+    html += f'    <ul><li>{atributo} = {valor}</li></ul>\n'
+    html += f'  </div>'
+    p[0] = html
+#ceradura
+def p_asignacion_cerradura(p):
+    """asignacion : ACT_CERRADURA ATTR_ESTADO ASSIGN ON
+                  | ACT_CERRADURA ATTR_ESTADO ASSIGN OFF"""
+                  
+    actuador = p[1]
+    atributo = p[2]
+    valor = p[4]
+            
+    html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
+    html += f'    <h1>{actuador}</h1>\n'
+    html += f'    <ul><li>{atributo} = {valor}</li></ul>\n'
+    html += f'  </div>'
+    p[0] = html
+#altavoz
+def p_asignacion_altavoz(p):
+    """asignacion : ACT_ALTAVOZ ATTR_VOLUMEN ASSIGN PERCENT
+                    | ACT_ALTAVOZ ATTR_MUTE ASSIGN ON
+                    | ACT_ALTAVOZ ATTR_MUTE ASSIGN OFF
+                    | ACT_ALTAVOZ ATTR_MENSAJE ASSIGN STRING
+                    | ACT_ALTAVOZ ATTR_EMAIL_NOTIF ASSIGN EMAIL"""
+    
+    actuador = p[1]
+    atributo = p[2]
+    valor = p[4]
+    
+    # 1. Validación Semántica (Ahora es súper corta, solo validamos el rango numérico)
+    if atributo == ".volumen":
+        num = float(str(valor).replace("%", ""))
+        if not (0 <= num <= 100):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: El volumen de {actuador} debe estar entre 0% y 100%</div>"
+            return
+
+    # 2. Generación HTML
+    html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
+    html += f'    <h1>{actuador}</h1>\n'
+    html += f'    <ul><li>{atributo} = {valor}</li></ul>\n'
+    html += f'  </div>'
+    p[0] = html
+#alarma
+def p_asignacion_alarma(p):
+    """asignacion : ACT_ALARMA ATTR_ESTADO ASSIGN ON
+                  | ACT_ALARMA ATTR_ESTADO ASSIGN OFF
+                  | ACT_ALARMA ATTR_ACTIVADA ASSIGN ON
+                  | ACT_ALARMA ATTR_ACTIVADA ASSIGN OFF"""
+                  
+    actuador = p[1]
+    atributo = p[2]
+    valor = p[4]
+            
+    html = f'  <div style="border: 1px solid gray; padding: 20px;">\n'
+    html += f'    <h1>{actuador}</h1>\n'
+    html += f'    <ul><li>{atributo} = {valor}</li></ul>\n'
+    html += f'  </div>'
     p[0] = html
 
-def p_valor(p):
-    """valor : NUMBER
-            | TEMP
-            | PERCENT
-            | LUX
-            | TIME_DURATION
-            | HORA
-            | FECHA
-            | STRING
-            | EMAIL
-            | TRUE
-            | FALSE
-            | ON
-            | OFF
-            | COLOR
-            | MODO"""
-    p[0] = p[1]
+#--------------------FIN DE LAS ASIGNACIONES--------------------
 
+#--------------------FUNCIONES DE BLOQUES--------------------
 def p_bloque_every(p):
     """bloque_every : EVERY HORA DO instrucciones END
                     | EVERY TIME_DURATION DO instrucciones END"""
@@ -320,81 +354,214 @@ def p_unit_logic(p):
         html += f'</div>'
         p[0] = html
 
-def p_comparison_sensor(p):
-    """comparison : SENSOR operador_comp valor"""
+#SENSOR TEMPERATURA
+def p_comparison_sensor_temp(p):
+    """comparison : SENS_TEMP operador_comp TEMP"""
+    sensor = p[1]
+    operador = p[2]
+    valor = p[3]
+    
+    num = float(str(valor).replace("°C", ""))
+    if not (-10 <= num <= 50):
+        p[0] = f"<div style='color:red;'>Error Semántico: Valor de temperatura fuera de rango (-10° a 50°)</div>"
+        return
+        
+    p[0] = f'<div style="border:1px solid green; padding: 20px;"><h2>{sensor}</h2><p>Condición: {operador} {valor}</p></div>'
+
+#SENSOR HUMEDAD
+def p_comparison_sensor_humedad(p):
+    """comparison : SENS_HUMEDAD operador_comp PERCENT"""
+    sensor = p[1]
+    operador = p[2]
+    valor = p[3]
+    
+    num = float(str(valor).replace("%", ""))
+    if not (0 <= num <= 100):
+        p[0] = f"<div style='color:red;'>Error Semántico: Valor de humedad fuera de rango (0% a 100%)</div>"
+        return
+        
+    p[0] = f'<div style="border:1px solid green; padding: 20px;"><h2>{sensor}</h2><p>Condición: {operador} {valor}</p></div>'
+
+#SENSOR LUZ
+def p_comparison_sensor_luz(p):
+    """comparison : SENS_LUZ operador_comp LUX"""
+
+    sensor = p[1]
+    operador = p[2]
+    valor = p[3]
+    
+    num = float(str(valor).replace("lux", ""))
+    if not (0 <= num <= 1000):
+        p[0] = f"<div style='color:red;'>Error Semántico: Valor de Iluminancia fuera de rango (0lux a 1000lux)</div>"
+        return
+        
+    p[0] = f'<div style="border:1px solid green; padding: 20px;"><h2>{sensor}</h2><p>Condición: {operador} {valor}</p></div>'
+
+#SENSOR MOVIMIENTO
+def p_comparison_sensor_mov(p):
+    """comparison : SENS_MOVIMIENTO EQUAL TRUE
+                  | SENS_MOVIMIENTO EQUAL FALSE
+                  | SENS_MOVIMIENTO NEGATE TRUE
+                  | SENS_MOVIMIENTO NEGATE FALSE"""
     sensor = p[1]
     operador = p[2]
     valor = p[3]
 
-    #SEMANTICA
-    if sensor in REGLAS_SENSORES:
-        regla_sensor = REGLAS_SENSORES[sensor]
+    p[0] = f'<div style="border:1px solid green; padding: 20px;"><h2>{p[1]}</h2><p>Condición: {p[2]} {p[3]}</p></div>'
 
-        # 2. Validar el tipo de dato
-        tipo_esperado = regla_sensor["valores"] 
+#SENSOR HUMO
+def p_comparison_sensor_humo(p):
+    """comparison : SENS_HUMO EQUAL TRUE
+                  | SENS_HUMO EQUAL FALSE
+                  | SENS_HUMO NEGATE TRUE
+                  | SENS_HUMO NEGATE FALSE"""
 
-        if isinstance(tipo_esperado, list):
-            if operador not in ["==", "!="]:
-                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: No puedes usar el operador '{operador}' en {sensor} porque es de texto/estado. Usa == o !=</div>"
-                return
-            if valor not in tipo_esperado:
-                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} debe ser uno de {tipo_esperado}</div>"
-                return
+    sensor = p[1]
+    operador = p[2]
+    valor = p[3]
 
-        elif tipo_esperado == "porcentaje": 
-            if not str(valor).endswith("%"):
-                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} requiere un porcentaje (%)</div>"
-                return
-            #rangos de valores
-            if "rango" in regla_sensor: 
-                min_val,max_val = regla_sensor["rango"]
-                num = float(str(valor).replace("%", ""))
-                if not (min_val <= num <= max_val):
-                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {sensor} debe estar entre {min_val}% y {max_val}%</div>"
-                    return
-                    
-        elif tipo_esperado == "lux":
-            if not str(valor).endswith("lux"):
-                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} requiere iluminancia en lux</div>"
-                return
-            if "rango" in regla_sensor:
-                min_val,max_val = regla_sensor["rango"]
-                num = float(str(valor).replace("lux", ""))
-                if not (min_val <= num <= max_val):
-                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {sensor} debe estar entre {min_val}lux y {max_val}lux</div>"
-                    return
+    p[0] = f'<div style="border:1px solid green; padding: 20px;"><h2>{p[1]}</h2><p>Condición: {p[2]} {p[3]}</p></div>'
 
-        elif tipo_esperado == "temperatura": 
-            if not str(valor).endswith("°C"):
-                p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: {sensor} requiere una temperatura en grados Celsius (°C)</div>"
-                return
-            #rangos de valores
-            if "rango" in regla_sensor: 
-                min_val,max_val = regla_sensor["rango"]
-                num = float(str(valor).replace("°C", ""))
-                if not (min_val <= num <= max_val):
-                    p[0] = f"<div style='color:red;'>Error Semántico: El valor de {sensor} debe estar entre {min_val}°C y {max_val}°C</div>"
-                    return
-    #fin semantica
+#---------------COMPARACIONES DE ACTUADORES---------------
+
+# COMPARACIÓN PARA FOCO
+def p_comparison_actuador_foco(p):
+    """comparison : ACT_FOCO ATTR_ESTADO operador_comp ON
+                  | ACT_FOCO ATTR_ESTADO operador_comp OFF
+                  | ACT_FOCO ATTR_BRILLO operador_comp PERCENT
+                  | ACT_FOCO ATTR_COLOR operador_comp COLOR"""
     
-    html = f'  <div style="border: 1px solid green; padding: 20px; margin-bottom: 10px;">\n'
-    html += f'    <h2>{sensor}</h2>\n'
-    html += f'    <p>Condición: {operador} {valor}</p>\n'
-    html += f'  </div>'
-    p[0] = html
-
-def p_comparison_actuador(p):
-    """comparison : ACTUATOR ATTRIBUTE operador_comp valor"""
     actuador = p[1]
     atributo = p[2]
     operador = p[3]
     valor = p[4]
     
-    html = f'  <div style="border: 1px solid green; padding: 20px; margin-bottom: 10px;">\n'
-    html += f'    <h2>{actuador}{atributo}</h2>\n'
-    html += f'    <p>Condición: {operador} {valor}</p>\n'
-    html += f'  </div>'
-    p[0] = html
+    if atributo in [".estado", ".color"]:
+        if operador not in ["==", "!="]:
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: No puedes usar '{operador}' en {atributo}. Usa == o !=</div>"
+            return
+    elif atributo == ".brillo":
+        num = float(str(valor).replace("%", ""))
+        if not (0 <= num <= 100):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: El brillo de {actuador} debe estar entre 0% y 100%</div>"
+            return
+            
+    p[0] = f'<div style="border:1px solid green; padding:20px;"><h2>{actuador}{atributo}</h2><p>Condición: {operador} {valor}</p></div>'
+
+# COMPARACIÓN PARA AIRE (Incluye la temperatura actual que es de solo lectura)
+def p_comparison_actuador_aire(p):
+    """comparison : ACT_AIRE ATTR_ESTADO operador_comp ON
+                  | ACT_AIRE ATTR_ESTADO operador_comp OFF
+                  | ACT_AIRE ATTR_MODO operador_comp MODO
+                  | ACT_AIRE ATTR_TEMP_OBJ operador_comp TEMP
+                  | ACT_AIRE ATTR_TEMP_ACT operador_comp TEMP"""
+                  
+    actuador = p[1]
+    atributo = p[2]
+    operador = p[3]
+    valor = p[4]
+    
+    if atributo in [".estado", ".modo"]:
+        if operador not in ["==", "!="]:
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: No puedes usar '{operador}' en {atributo}. Usa == o !=</div>"
+            return
+    elif atributo == ".temp_obj":
+        num = float(str(valor).replace("°C", ""))
+        if not (16 <= num <= 30):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: La temperatura objetivo debe estar entre 16°C y 30°C</div>"
+            return
+    elif atributo == ".temp_act":
+        num = float(str(valor).replace("°C", ""))
+        if not (-10 <= num <= 50):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: La temperatura actual debe estar entre -10°C y 50°C</div>"
+            return
+            
+    p[0] = f'<div style="border:1px solid green; padding:20px;"><h2>{actuador}{atributo}</h2><p>Condición: {operador} {valor}</p></div>'
+
+# COMPARACIÓN PARA PERSIANA 
+def p_comparison_actuador_persiana(p):
+    """comparison : ACT_PERSIANA ATTR_POSICION operador_comp PERCENT"""
+    
+    actuador = p[1]
+    atributo = p[2]
+    operador = p[3]
+    valor = p[4]
+    
+    if atributo == ".posicion":
+        num = float(str(valor).replace("%", ""))
+        if not (0 <= num <= 100):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: La posición debe estar entre 0% y 100%</div>"
+            return
+            
+    p[0] = f'<div style="border:1px solid green; padding:20px;"><h2>{actuador}{atributo}</h2><p>Condición: {operador} {valor}</p></div>'
+
+# COMPARACIÓN PARA CERRADURA 
+def p_comparison_actuador_cerradura(p):
+    """comparison : ACT_CERRADURA ATTR_ESTADO operador_comp ON
+                  | ACT_CERRADURA ATTR_ESTADO operador_comp OFF"""
+    
+    actuador = p[1]
+    atributo = p[2]
+    operador = p[3]
+    valor = p[4]
+    
+    if operador not in ["==", "!="]:
+        p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: No puedes usar '{operador}' en {atributo}. Usa == o !=</div>"
+        return
+            
+    p[0] = f'<div style="border:1px solid green; padding:20px;"><h2>{actuador}{atributo}</h2><p>Condición: {operador} {valor}</p></div>'
+
+# COMPARACIÓN PARA RELOJ 
+def p_comparison_actuador_reloj(p):
+    """comparison : ACT_RELOJ ATTR_HORA operador_comp HORA
+                  | ACT_RELOJ ATTR_FECHA operador_comp FECHA"""
+    
+    p[0] = f'<div style="border:1px solid green; padding:20px;"><h2>{p[1]}{p[2]}</h2><p>Condición: {p[3]} {p[4]}</p></div>'
+
+# COMPARACIÓN PARA ALTAVOZ 
+def p_comparison_actuador_altavoz(p):
+    """comparison : ACT_ALTAVOZ ATTR_VOLUMEN operador_comp PERCENT
+                  | ACT_ALTAVOZ ATTR_MUTE operador_comp ON
+                  | ACT_ALTAVOZ ATTR_MUTE operador_comp OFF
+                  | ACT_ALTAVOZ ATTR_MENSAJE operador_comp STRING
+                  | ACT_ALTAVOZ ATTR_EMAIL_NOTIF operador_comp EMAIL"""
+    
+    actuador = p[1]
+    atributo = p[2]
+    operador = p[3]
+    valor = p[4]
+    
+    if atributo in [".mute", ".mensaje", ".email_notif"]:
+        if operador not in ["==", "!="]:
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: No puedes usar '{operador}' en {atributo}. Usa == o !=</div>"
+            return
+    elif atributo == ".volumen":
+        num = float(str(valor).replace("%", ""))
+        if not (0 <= num <= 100):
+            p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: El volumen debe estar entre 0% y 100%</div>"
+            return
+            
+    p[0] = f'<div style="border:1px solid green; padding:20px;"><h2>{actuador}{atributo}</h2><p>Condición: {operador} {valor}</p></div>'
+
+# COMPARACIÓN PARA ALARMA 
+def p_comparison_actuador_alarma(p):
+    """comparison : ACT_ALARMA ATTR_ACTIVADA operador_comp ON
+                  | ACT_ALARMA ATTR_ACTIVADA operador_comp OFF
+                  | ACT_ALARMA ATTR_ESTADO operador_comp ON
+                  | ACT_ALARMA ATTR_ESTADO operador_comp OFF"""
+    
+    actuador = p[1]
+    atributo = p[2]
+    operador = p[3]
+    valor = p[4]
+    
+    if operador not in ["==", "!="]:
+        p[0] = f"<div style='color:red; border:2px solid red; padding:10px;'>Error Semántico: No puedes usar '{operador}' en {atributo}. Usa == o !=</div>"
+        return
+            
+    p[0] = f'<div style="border:1px solid green; padding:20px;"><h2>{actuador}{atributo}</h2><p>Condición: {operador} {valor}</p></div>'
+
+#---------------FIN DE LAS COMPARACIONES---------------
 
 def p_comparison_bool(p):
     """comparison : TRUE
