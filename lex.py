@@ -1,463 +1,281 @@
-from tok import (
-    ATRIBUTOS_VALIDOS,
-    PALABRAS_RESERVADAS,
-    PREFIJOS_ACTUADOR,
-    PREFIJOS_SENSOR,
-    Token,
-    TokenKind,
-)
+import ply.lex as lex
+
+# Definimos los tokens como strings (en lugar de Enum)
+tokens = [
+    'WHEN', 'EVERY', 'IF', 'THEN', 'ELSE', 'DO', 'END',
+    'AND', 'OR', 'NOT',
+    'TRUE', 'FALSE', 'ON', 'OFF',
+    'MODO', 'COLOR',
+    
+    'ACT_FOCO', 'ACT_AIRE', 'ACT_PERSIANA', 'ACT_CERRADURA', 'ACT_RELOJ', 'ACT_ALTAVOZ', 'ACT_ALARMA',
+    
+    'SENS_TEMP', 'SENS_HUMEDAD', 'SENS_LUZ', 'SENS_MOVIMIENTO', 'SENS_HUMO',
+    
+    'ATTR_ESTADO', 'ATTR_BRILLO', 'ATTR_COLOR', 'ATTR_MODO', 'ATTR_TEMP_OBJ', 'ATTR_TEMP_ACT', 
+    'ATTR_POSICION', 'ATTR_HORA', 'ATTR_FECHA', 'ATTR_VOLUMEN', 'ATTR_MUTE', 'ATTR_MENSAJE', 
+    'ATTR_EMAIL_NOTIF', 'ATTR_ACTIVADA',
+    
+    'NUMBER', 'TEMP', 'PERCENT', 'LUX', 'TIME_DURATION', 'HORA', 'FECHA', 'STRING', 'EMAIL',
+    
+    'EQUAL', 'NEGATE', 'GREATER', 'LESSER', 'GREAT_EQUAL', 'LESS_EQUAL', 'ASSIGN',
+    
+    'LPAREN', 'RPAREN'
+]
+
+PALABRAS_RESERVADAS = {
+    "when": "WHEN",
+    "every": "EVERY",
+    "if": "IF",
+    "then": "THEN",
+    "else": "ELSE",
+    "do": "DO",
+    "end": "END",
+    "and": "AND",
+    "or": "OR",
+    "not": "NOT",
+    "true": "TRUE",
+    "false": "FALSE",
+    "on": "ON",
+    "off": "OFF",
+}
+
+PREFIJOS_SENSOR = {
+    "sensor_temp": "SENS_TEMP",
+    "sensor_luz": "SENS_LUZ",
+    "sensor_movimiento": "SENS_MOVIMIENTO",
+    "sensor_humo": "SENS_HUMO",
+    "sensor_humedad": "SENS_HUMEDAD",
+}
+
+PREFIJOS_ACTUADOR = {
+    "foco_": "ACT_FOCO",
+    "aire_": "ACT_AIRE",
+    "persiana_": "ACT_PERSIANA",
+    "cerradura_": "ACT_CERRADURA",
+    "reloj_": "ACT_RELOJ",
+    "altavoz_": "ACT_ALTAVOZ",
+    "alarma_": "ACT_ALARMA",
+}
+
+ATRIBUTOS_VALIDOS = {
+    ".estado": "ATTR_ESTADO",
+    ".brillo": "ATTR_BRILLO",
+    ".color": "ATTR_COLOR",
+    ".modo": "ATTR_MODO",
+    ".temp_obj": "ATTR_TEMP_OBJ",
+    ".temp_act": "ATTR_TEMP_ACT",
+    ".posicion": "ATTR_POSICION",
+    ".hora": "ATTR_HORA",
+    ".fecha": "ATTR_FECHA",
+    ".volumen": "ATTR_VOLUMEN",
+    ".mute": "ATTR_MUTE",
+    ".mensaje": "ATTR_MENSAJE",
+    ".email_notif": "ATTR_EMAIL_NOTIF",
+    ".activada": "ATTR_ACTIVADA",
+}
+
+# Expresiones regulares simples
+t_EQUAL = r'=='
+t_NEGATE = r'!='
+t_GREAT_EQUAL = r'>='
+t_LESS_EQUAL = r'<='
+t_GREATER = r'>'
+t_LESSER = r'<'
+t_ASSIGN = r'='
+t_LPAREN = r'\('
+t_RPAREN = r'\)'
+
+# Ignorar espacios y tabulaciones
+t_ignore = ' \t\r'
+
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
+
+def t_COMENTARIO(t):
+    r'//.*'
+    pass
+
+def t_EMAIL(t):
+    r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+|[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+'
+    parts = t.value.split('@')
+    if len(parts) == 2:
+        user, domain = parts
+        if '.' in domain:
+            ext = domain.rsplit('.', 1)[-1]
+            if 2 <= len(ext) <= 4 and ext.isalpha():
+                t.type = 'EMAIL'
+                return t
+    
+    t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Email inválido '{t.value}'")
+    pass
+
+def t_FECHA(t):
+    r'\d{2}/\d{2}/\d{4}|\d+/\d+/\d+'
+    parts = t.value.split('/')
+    if len(parts) == 3 and len(parts[0]) == 2 and len(parts[1]) == 2 and len(parts[2]) == 4:
+        dia, mes, anio = map(int, parts)
+        if 1 <= dia <= 31 and 1 <= mes <= 12 and 1900 <= anio <= 2099:
+            t.type = 'FECHA'
+            return t
+    t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Fecha inválida '{t.value}'")
+    pass
+
+def t_HORA(t):
+    r'\d{2}:\d{2}|\d+:\d+'
+    parts = t.value.split(':')
+    if len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 2:
+        hh, mm = map(int, parts)
+        if 0 <= hh <= 23 and 0 <= mm <= 59:
+            t.type = 'HORA'
+            return t
+    t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Hora inválida '{t.value}'")
+    pass
+
+def t_NUMBER_AND_UNITS(t):
+    r'-?\d+(\.\d+)?([a-zA-Z°%]+)?'
+    val = t.value
+    num_part = ""
+    unit_part = ""
+    for i, c in enumerate(val):
+        if c.isdigit() or c == '.' or (i == 0 and c == '-'):
+            num_part += c
+        else:
+            unit_part = val[i:]
+            break
+            
+    if not unit_part:
+        t.type = 'NUMBER'
+        return t
+        
+    unit_upper = unit_part.upper()
+    if unit_upper == '%':
+        num_val = int(num_part)
+        if 0 <= num_val <= 100: 
+            t.type = 'PERCENT'
+            return t
+        else:
+            t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Valor de porcentaje fuera de rango (0-100): '{t.value}'")
+            pass
+
+    elif unit_upper == '°C':
+        t.type = 'TEMP'
+        return t
+    elif unit_upper == '°':
+        t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Unidad de temperatura incompleta '{t.value}'")
+        pass
+    elif unit_upper == 'LUX':
+        num_val = int(num_part)
+        if 0 <= num_val <= 1000: 
+            t.type = 'LUX'
+            return t
+        else:
+            t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Valor de iluminancia fuera de rango (0-1000): '{t.value}'")
+            pass
+    elif unit_upper in ['S', 'M', 'H']:
+        t.type = 'TIME_DURATION'
+        return t
+    else:
+        t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Unidad inválida '{unit_part}' en valor '{t.value}'")
+        pass
+
+def t_ATRIBUTO(t):
+    r'\.[a-zA-Z0-9_]+'
+    attr_key = t.value.lower()
+    if attr_key in ATRIBUTOS_VALIDOS:
+        t.type = ATRIBUTOS_VALIDOS[attr_key]
+        return t
+    t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Atributo desconocido '{t.value}'")
+    pass
+
+def t_ID(t):
+    r'[a-zA-Z_][a-zA-Z0-9_]*'
+    lexema_lower = t.value.lower()
+
+    if lexema_lower in PALABRAS_RESERVADAS:
+        t.type = PALABRAS_RESERVADAS[lexema_lower]
+        return t
+
+    if lexema_lower in ("blanco", "rojo", "azul"):
+        t.type = 'COLOR'
+        return t
+
+    if lexema_lower in ("frio", "calor", "vent"):
+        t.type = 'MODO'
+        return t
+
+    for prefijo, token_kind in PREFIJOS_SENSOR.items():
+        if lexema_lower == prefijo or lexema_lower.startswith(prefijo + "_"):
+            t.type = token_kind
+            return t
+
+    for prefijo, token_kind in PREFIJOS_ACTUADOR.items():
+        if lexema_lower.startswith(prefijo):
+            t.type = token_kind
+            return t
+
+    t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Identificador no reconocido '{t.value}'")
+    pass
+
+def t_STRING(t):
+    r'["“][^"”\n]*["”]'
+    return t
+
+def t_UNCLOSED_STRING(t):
+    r'["“][^"”\n]*\n'
+    t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Cadena sin cerrar antes del fin de línea")
+    t.lexer.lineno += 1
+    pass
+
+def t_error(t):
+    t.lexer.errors.append(f"\033[91mError Léxico\033[0m en línea {t.lexer.lineno}: Carácter no reconocido '{t.value[0]}'")
+    t.lexer.skip(1)
+
+# Parcheamos el repr de LexToken para que se imprima lindo en consola
+from ply.lex import LexToken
+def token_repr(self):
+    return f"\033[92mToken\033[0m(\033[93m{self.type}\033[0m, \033[96m'{self.value}'\033[0m, línea={self.lineno}, col={getattr(self, 'col', self.lexpos)})"
+
+LexToken.__repr__ = token_repr
+LexToken.__str__ = token_repr
 
 class Lexer:
     def __init__(self, source: str):
         self.source = source
-        self.pos = 0
-        self.row = 1
-        self.col = 1
-        self.tokens = []
-        self.errors = []
+        self.lexer = lex.lex()
+        self.lexer.errors = []
+        self.errors = self.lexer.errors
+        self._tokens_list = []
         self._token_index = 0
 
     def input(self, data):
-        # PLY llama a este método si pasamos el source a parser.parse()
-        # Como ya cargamos el source en __init__, no necesitamos hacer nada.
-        pass
-
-    def token(self):
-        if not self.tokens:
-            self.tokenize()
-        if self._token_index < len(self.tokens):
-            tok = self.tokens[self._token_index]
-            self._token_index += 1
-            if tok.kind == TokenKind.EOF:
-                return None
-            return tok
-        return None
-
-    def add_error(self, msg, row=None, col=None):
-        r = row if row is not None else self.row
-        c = col if col is not None else self.col
-        lines = self.source.split("\n")
-        line_idx = r - 1
-        if 0 <= line_idx < len(lines):
-            line_text = lines[line_idx]
-            margen_izq = 30
-            margen_der = 10
-            inicio = max(0, c - 1 - margen_izq)
-            fin = min(len(line_text), c - 1 + margen_der + 1)
-            fragmento = line_text[inicio:fin]
-            prefijo = "..." if inicio > 0 else ""
-            sufijo = "..." if fin < len(line_text) else ""
-            pos_flecha = (c - 1) - inicio + len(prefijo)
-            err_msg = f"\033[91mError Léxico\033[0m en línea {r}, col {c}: {msg}\n"
-            err_msg += f"  {prefijo}{fragmento}{sufijo}\n"
-            err_msg += "  " + " " * pos_flecha + "\033[91m^\033[0m"
-            self.errors.append(err_msg)
-        else:
-            self.errors.append(f"\033[91mError Léxico:\033[0m {msg}")
-
-    def peek(self, offset=0):
-        p = self.pos + offset
-        if p < len(self.source):
-            return self.source[p]
-        return ""
-
-    def advance(self):
-        ch = self.source[self.pos]
-        self.pos += 1
-        if ch == "\n":
-            self.row += 1
-            self.col = 1
-        else:
-            self.col += 1
-        return ch
+        self._token_index = 0
 
     def tokenize(self):
-        while self.pos < len(self.source):
-            ch = self.peek()
-
-            if ch in " \t\r\n":
-                self.advance()
-                continue
-
-            if ch in "=!<>()":
-                self.consumir_operador()
-                continue
-
-            if ch == "/" and self.peek(1) == "/":
-                self.consumir_comentario()
-                continue
-
-            if self.consumir_email():
-                continue
-
-            if self.consumir_hora():
-                continue
-
-            if self.consumir_fecha():
-                continue
-
-            if ch.isdigit():
-                self.consumir_numero()
-                continue
-
-            if ch == '"':
-                self.consumir_string()
-                continue
-
-            if ch.isalpha() or ch == "_":
-                self.consumir_identificador()
-                continue
-
-            if ch == ".":
-                self.consumir_atributo()
-                continue
-
-            self.add_error(f"Carácter no reconocido: '{ch}'")
-            self.advance()
-
-        self.tokens.append(Token(TokenKind.EOF, "", self.row, self.col))
-        return self.tokens
-
-    def consumir_email(self):
-        temp_pos = self.pos
-        while temp_pos < len(self.source) and (
-            self.source[temp_pos].isalnum() or self.source[temp_pos] in "_.+-@"
-        ):
-            temp_pos += 1
-
-        candidato = self.source[self.pos : temp_pos]
-
-        if candidato.count("@") == 1:
-            usuario, resto = candidato.split("@")
-            if usuario and "." in resto:
-                dominio, extension = resto.rsplit(".", 1)
-
-                caracteres_validos = set("_.+-")
-                usuario_valido = all(
-                    c.isalnum() or c in caracteres_validos for c in usuario
-                )
-                dominio_valido = all(
-                    c.isalnum() or c in caracteres_validos for c in dominio
-                )
-                extension_valida = extension.isalpha() and 2 <= len(extension) <= 4
-
-                if usuario_valido and dominio_valido and extension_valida and dominio:
-                    start_row, start_col = self.row, self.col
-                    lexema = ""
-                    while self.pos < temp_pos:
-                        lexema += self.advance()
-                    self.tokens.append(
-                        Token(TokenKind.EMAIL, lexema, start_row, start_col)
-                    )
-                    return True
-        return False
-
-    def consumir_fecha(self):
-        if self.pos + 9 >= len(self.source):
-            return False
-
-        d1 = self.source[self.pos]
-        d2 = self.source[self.pos + 1]
-        sep1 = self.source[self.pos + 2]
-        m1 = self.source[self.pos + 3]
-        m2 = self.source[self.pos + 4]
-        sep2 = self.source[self.pos + 5]
-        a1 = self.source[self.pos + 6]
-        a2 = self.source[self.pos + 7]
-        a3 = self.source[self.pos + 8]
-        a4 = self.source[self.pos + 9]
-
-        if not (
-            d1.isdigit()
-            and d2.isdigit()
-            and sep1 == "/"
-            and m1.isdigit()
-            and m2.isdigit()
-            and sep2 == "/"
-            and a1.isdigit()
-            and a2.isdigit()
-            and a3.isdigit()
-            and a4.isdigit()
-        ):
-            return False
-
-        dia = int(d1 + d2)
-        mes = int(m1 + m2)
-        anio = int(a1 + a2 + a3 + a4)
-
-        if not (1 <= dia <= 31 and 1 <= mes <= 12 and 1900 <= anio <= 2099):
-            self.add_error(
-                f"Fecha fuera de rango: '{d1}{d2}/{m1}{m2}/{a1}{a2}{a3}{a4}'"
-            )
-            for _ in range(10):
-                self.advance()
-            return True
-
-        start_row, start_col = self.row, self.col
-        lexema = ""
-
-        for _ in range(10):
-            lexema += self.advance()
-
-        self.tokens.append(Token(TokenKind.FECHA, lexema, start_row, start_col))
-        return True
-
-    def consumir_hora(self):
-        start_pos = self.pos
-        start_row = self.row
-        start_col = self.col
-        num1 = ""
-        num2 = ""
-
-
-        while self.pos < len(self.source) and self.source[self.pos].isdigit():
-            num1 += self.source[self.pos]
-            self.pos += 1
-            self.col += 1
-
-
-        if len(num1) != 2:
-            self.pos = start_pos
-            self.row = start_row
-            self.col = start_col
-            return False
-
-        if self.pos >= len(self.source) or self.source[self.pos] != ":":
-            self.pos = start_pos
-            self.row = start_row
-            self.col = start_col
-            return False
-        self.pos += 1
-        self.col += 1
-
-
-        while self.pos < len(self.source) and self.source[self.pos].isdigit():
-            num2 += self.source[self.pos]
-            self.pos += 1
-            self.col += 1
-
-        if len(num2) != 2:
-            self.pos = start_pos
-            self.row = start_row
-            self.col = start_col
-            return False
-
-        if not (0 <= int(num1) <= 23 and 0 <= int(num2) <= 59):
-            self.add_error(f"Hora inválida: '{num1}:{num2}'", start_row, start_col)
-            return True
-
-        lexema = f"{num1}:{num2}"
-        self.tokens.append(Token(TokenKind.HORA, lexema, start_row, start_col))
-        return True
-
-    def consumir_numero(self):
-        start_row = self.row
-        start_col = self.col
-        lexema = ""
-
-        while self.pos < len(self.source) and self.peek().isdigit():
-            lexema += self.advance()
-
-        if self.peek() == "." and self.peek(1).isdigit():
-            lexema += self.advance()
-            while self.pos < len(self.source) and self.peek().isdigit():
-                lexema += self.advance()
-
-        sig = self.peek()
-
-        if sig == "%":
-            lexema += self.advance()
-            self.tokens.append(Token(TokenKind.PERCENT, lexema, start_row, start_col))
-
-        elif sig == "°":
-            lexema += self.advance()
-            if self.peek().upper() == "C":
-                lexema += self.advance()
-                self.tokens.append(Token(TokenKind.TEMP, lexema, start_row, start_col))
-            else:
-                self.add_error(f"Unidad de temperatura incompleta: '{lexema}'")
-
-        elif sig.lower() in ("l", "s", "m", "h"):
-            if sig.lower() == "l" and self.source[self.pos : self.pos + 3].lower() == "lux":
-                lexema += self.advance()
-                lexema += self.advance()
-                lexema += self.advance()
-                self.tokens.append(Token(TokenKind.LUX, lexema, start_row, start_col))
-            elif sig.lower() in ("s", "m", "h"):
-                lexema += self.advance()
-                self.tokens.append(
-                    Token(TokenKind.TIME_DURATION, lexema, start_row, start_col)
-                )
-            else:
-                self.tokens.append(
-                    Token(TokenKind.NUMBER, lexema, start_row, start_col)
-                )
-
-        else:
-            self.tokens.append(Token(TokenKind.NUMBER, lexema, start_row, start_col))
-
-    def consumir_comentario(self):
-        self.advance()
-        self.advance()
-        while self.pos < len(self.source) and self.peek() != "\n":
-            self.advance()
-
-    def consumir_identificador(self):
-        start_row = self.row
-        start_col = self.col
-        lexema = ""
-
-        while self.pos < len(self.source) and (
-            self.peek().isalnum() or self.peek() == "_"
-        ):
-            lexema += self.advance()
-
-        lexema_lower = lexema.lower()
-
-        if lexema_lower in PALABRAS_RESERVADAS:
-            self.tokens.append(
-                Token(PALABRAS_RESERVADAS[lexema_lower], lexema, start_row, start_col)
-            )
-            return
-
-        if lexema_lower in ("blanco", "rojo", "azul"):
-            self.tokens.append(Token(TokenKind.COLOR, lexema, start_row, start_col))
-            return
-
-        if lexema_lower in ("frio", "calor", "vent"):
-            self.tokens.append(Token(TokenKind.MODO, lexema, start_row, start_col))
-            return
-
-        for prefijo, token_kind in PREFIJOS_SENSOR.items():
-            if lexema_lower == prefijo or lexema_lower.startswith(prefijo + "_"):
-                self.tokens.append(
-                    Token(token_kind, lexema, start_row, start_col)
-                )
-                return
-
-        for prefijo, token_kind in PREFIJOS_ACTUADOR.items():
-            if lexema_lower.startswith(prefijo):
-                self.tokens.append(
-                    Token(token_kind, lexema, start_row, start_col)
-                )
-                return
-
-        self.add_error(f"Identificador no reconocido: '{lexema}'", start_row, start_col)
-
-    def consumir_atributo(self):
-        start_row = self.row
-        start_col = self.col
-
-        self.advance()
-
-        nombre = ""
-        while self.pos < len(self.source) and (
-            self.peek().isalnum() or self.peek() == "_"
-        ):
-            nombre += self.advance()
-
-        if not nombre:
-            self.add_error(
-                "Se esperaba un nombre de atributo después del '.'",
-                start_row,
-                start_col,
-            )
-            return
-
-        attr_key = f".{nombre.lower()}"
-        if attr_key not in ATRIBUTOS_VALIDOS:
-            self.add_error(f"Atributo desconocido: '{attr_key}'", start_row, start_col)
-            return
-
-        token_kind = ATRIBUTOS_VALIDOS[attr_key]
-        self.tokens.append(
-            Token(token_kind, "." + nombre, start_row, start_col)
-        )
-
-    def consumir_string(self):
-        start_row = self.row
-        start_col = self.col
-
-        self.advance()
-        contenido = ""
-
-        while self.pos < len(self.source) and self.peek() != '"':
-            if self.peek() == "\n":
-                self.add_error(
-                    "Cadena sin cerrar antes del fin de línea", start_row, start_col
-                )
-                return
-            contenido += self.advance()
-
-        if self.pos >= len(self.source):
-            self.add_error("Cadena sin cerrar (EOF)")
-            return
-
-        self.advance()
-
-        self.tokens.append(
-            Token(TokenKind.STRING, '"' + contenido + '"', start_row, start_col)
-        )
-
-    def consumir_operador(self):
-        start_row = self.row
-        start_col = self.col
-        ch = self.peek()
-        sig = self.peek(1)
-
-        if ch == "=" and sig == "=":
-            self.advance()
-            self.advance()
-            self.tokens.append(Token(TokenKind.EQUAL, "==", start_row, start_col))
-            return
-
-        if ch == "!" and sig == "=":
-            self.advance()
-            self.advance()
-            self.tokens.append(Token(TokenKind.NEGATE, "!=", start_row, start_col))
-            return
-
-        if ch == ">" and sig == "=":
-            self.advance()
-            self.advance()
-            self.tokens.append(Token(TokenKind.GREAT_EQUAL, ">=", start_row, start_col))
-            return
-
-        if ch == "<" and sig == "=":
-            self.advance()
-            self.advance()
-            self.tokens.append(Token(TokenKind.LESS_EQUAL, "<=", start_row, start_col))
-            return
-
-        if ch == "=":
-            self.advance()
-            self.tokens.append(Token(TokenKind.ASSIGN, "=", start_row, start_col))
-            return
-
-        if ch == ">":
-            self.advance()
-            self.tokens.append(Token(TokenKind.GREATER, ">", start_row, start_col))
-            return
-
-        if ch == "<":
-            self.advance()
-            self.tokens.append(Token(TokenKind.LESSER, "<", start_row, start_col))
-            return
-
-        if ch == "(":
-            self.advance()
-            self.tokens.append(Token(TokenKind.LPAREN, "(", start_row, start_col))
-            return
-
-        if ch == ")":
-            self.advance()
-            self.tokens.append(Token(TokenKind.RPAREN, ")", start_row, start_col))
-            return
-
-        if ch == "!":
-            self.add_error("Operador inválido: '!' (¿quisiste decir '!='?)")
-            self.advance()
-            return
-
-        self.add_error(f"Operador no reconocido: '{ch}'")
-        self.advance()
+        self.lexer.input(self.source)
+        self.lexer.lineno = 1
+        self._tokens_list = []
+        
+        while True:
+            tok = self.lexer.token()
+            if not tok:
+                break
+            
+            last_cr = self.source.rfind('\n', 0, tok.lexpos)
+            if last_cr < 0:
+                last_cr = -1
+            tok.col = (tok.lexpos - last_cr)
+            
+            self._tokens_list.append(tok)
+            
+        return self._tokens_list
+
+    def token(self):
+        if not self._tokens_list and not self.errors:
+            self.tokenize()
+            
+        if self._token_index < len(self._tokens_list):
+            tok = self._tokens_list[self._token_index]
+            self._token_index += 1
+            return tok
+        return None

@@ -98,12 +98,9 @@
 <assign_alarma> → <actuator_alarma> .estado = <tk_val_bool>
                 | <actuator_alarma> .activada = <tk_val_bool>
 """
-
 import ply.yacc as yacc
-from tok import TokenKind
+from lex import tokens
 from semantica import REGLAS_ACTUADORES, REGLAS_SENSORES
-
-tokens = [kind.name for kind in TokenKind if kind not in (TokenKind.EOF, TokenKind.ERROR)]
 
 precedence = (
     ('left', 'OR'),
